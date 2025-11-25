@@ -32,6 +32,8 @@ public:
     void add_sprite_to_batch(const sprite_data_t& sprite);
     void render();
     void render_batch();
+    void clean_batch_frame();
+    void clean_frame();
 
     SDL_Window* m_window;
     std::vector<sprite_data_t> m_sprites;
@@ -44,7 +46,6 @@ private:
     void init_custom_shaders();
     SDL_Texture* load_texture(std::string);
     SDL_Texture* get_texture(std::string);
-    void begin_frame();
     bool render_sprite(const sprite_data_t& sprite);
     void add_sprite_vertices(SDL_Texture* texture, float x, float y, float w, float h);
 };

@@ -28,6 +28,7 @@ SDL_Renderer* g_cursor_renderer = nullptr;
 
 struct PositionComponent{
     float x,y;
+    float angle;
 };
 struct SpriteComponent{
     float r, g, b;
@@ -38,6 +39,7 @@ struct SpriteComponent{
 
 struct MoveComponent{
     float velX, velY;
+    float rotation_angle;
     void Initialize(float minSpeed, float maxSpeed)
     {
         // random angle
@@ -111,6 +113,8 @@ struct MoveSystem{
                     objects.m_moves[i].velX *= -1;
                 if(objects.m_positions[i].y >= objects.m_borders[i].y_max || objects.m_positions[i].y <= objects.m_borders[i].y_min)
                     objects.m_moves[i].velY *= -1;
+                
+                objects.m_positions[i].angle += objects.m_moves[i].rotation_angle;
             }
         }
 
@@ -193,14 +197,17 @@ void init_game(){
 
             EntityID obj = s_objects.add_object("tile");
             if(tokens[columns * r + c] == "0"){
-                s_objects.m_sprites[obj].index = 1;
+                s_objects.m_sprites[obj].index = 4;
                 s_objects.m_sprites[obj].scale = 1;
                 s_objects.m_sprites[obj].width = tile_width;
                 s_objects.m_sprites[obj].height = tile_height;
                 s_objects.m_sprites[obj].r = 0.6;
                 s_objects.m_sprites[obj].g = 0.6;
                 s_objects.m_sprites[obj].b = 0.6;
-                s_objects.m_flags[obj] |= fEntitySpriteBatch;
+                if(obj % 2)
+                    s_objects.m_flags[obj] |= fEntitySpriteBatch;
+                else 
+                    s_objects.m_flags[obj] |= fEntitySprite;
                 
                 s_objects.m_positions[obj].x = tile_width * c;
                 s_objects.m_positions[obj].y = tile_height * r;
@@ -208,6 +215,7 @@ void init_game(){
 
                 s_objects.m_moves[obj].velX = RandomFloat(.1, 3.);
                 s_objects.m_moves[obj].velY = RandomFloat(.1, 3.);
+                s_objects.m_moves[obj].rotation_angle = RandomFloat(-1.f, 1.f);
                 s_objects.m_flags[obj] |= fEntityMove;
 
                 s_objects.m_borders[obj].x_min = tile_width * c - 10.;
@@ -246,7 +254,10 @@ void game_loop(){
         handle_input();
         update_game(std::min(static_cast<float>(currentTime - lastTime) / 1000, 0.05f));
         draw_output();
-        SDL_Delay(16); // Ограничивает ~120 FPS
+        int sleep = 8 - (SDL_GetTicks() - currentTime);
+        if(sleep > 0){
+            SDL_Delay(sleep); // Ограничивает ~120 FPS
+        }
     }
 }
 
@@ -268,11 +279,13 @@ void handle_input(){
 void update_game(float deltatime){
     // std::cout << deltatime <<"\n";
     s_move_system.update(s_objects, deltatime);
-
+    g_render_system->clean_batch_frame();
+    g_render_system->clean_frame();
     for(size_t i = 0, n = s_objects.size(); i != n; i++){
             sprite_data_t spr_data;
             spr_data.posX   = s_objects.m_positions[i].x;
             spr_data.posY   = s_objects.m_positions[i].y;
+            spr_data.angle  = s_objects.m_positions[i].angle;
             spr_data.colR   = s_objects.m_sprites[i].r;
             spr_data.colG   = s_objects.m_sprites[i].g;
             spr_data.colB   = s_objects.m_sprites[i].b;

@@ -6,6 +6,7 @@ typedef struct
     float width, height;
     float scale;
     float colR, colG, colB;
+    float angle;
     int sprite;
 } sprite_data_t;
 
