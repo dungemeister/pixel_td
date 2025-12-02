@@ -6,11 +6,8 @@ int main(int argc, char* argv[]){
     srand(time(NULL));
     std::cout << "Hello from anime_td. PID: " << getpid() << "\n";
     
-    init_render_system();
-    init_game();
-
-    game_loop();
-    destroy_game();
+    Game game;
+    game.loop();
 
     return 0;
 }

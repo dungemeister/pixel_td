@@ -73,16 +73,16 @@ bool RenderSystem::render_sprite(const sprite_data_t& sprite){
     std::string textpath;
     switch(sprite.sprite){
         case 0:
-            textpath = "assets/rocket_tower.png";
+            textpath = "assets/grass_tile_00.png";
         break;
         case 1:
-            textpath = "assets/jotaro-kujo-josuke.png";
+            textpath = "assets/grass_tile_01.png";
         break;
         case 2:
-            textpath = "assets/quot-stickers.png";
+            textpath = "assets/grass_tile_02.png";
         break;
-        case 4:
-            textpath = "assets/grass_tile_01.png";
+        case 3:
+            textpath = "assets/grass_tile_03.png";
         break;
         default:
             textpath = "assets/quot-stickers.png";
@@ -138,12 +138,12 @@ bool RenderSystem::render_sprite(const sprite_data_t& sprite){
     // SDL_Surface* border_surface = SDL_CreateSurface(dest_rect.w, dest_rect.h, SDL_PIXELFORMAT_RGBA32);
     // SDL_SetRenderDrawColor(m_renderer, 0xFF, 0x00, 0x00, 0xFF);
     // res = SDL_RenderRect(m_renderer, &dest_rect);
-    SDL_Color circle_color = {0x80, 0x00, 0x80, 0xFF};
-    res = Circle::render_circle(m_renderer,
-                          dest_rect.x + dest_rect.w / 2,
-                          dest_rect.y + dest_rect.h / 2,
-                          SDL_sqrtf(dest_rect.w * dest_rect.w + dest_rect.h * dest_rect.h),
-                          circle_color);
+    // SDL_Color circle_color = {0x80, 0x00, 0x80, 0xFF};
+    // res = Circle::render_circle(m_renderer,
+    //                       dest_rect.x + dest_rect.w / 2,
+    //                       dest_rect.y + dest_rect.h / 2,
+    //                       SDL_sqrtf(dest_rect.w * dest_rect.w + dest_rect.h * dest_rect.h),
+    //                       circle_color);
     // res = SDL_RenderTextureTiled(m_renderer, text, &r, scale, NULL);
     return res;
 }
@@ -152,16 +152,16 @@ void RenderSystem::add_sprite_to_batch(const sprite_data_t& sprite){
     std::string textpath;
     switch(sprite.sprite){
         case 0:
-            textpath = "assets/rocket_tower.png";
+            textpath = "assets/grass_tile_00.png";
         break;
         case 1:
-            textpath = "assets/jotaro-kujo-josuke.png";
+            textpath = "assets/grass_tile_01.png";
         break;
         case 2:
-            textpath = "assets/quot-stickers.png";
+            textpath = "assets/grass_tile_02.png";
         break;
-        case 4:
-            textpath = "assets/grass_tile_01.png";
+        case 3:
+            textpath = "assets/grass_tile_03.png";
         break;
         default:
             textpath = "assets/quot-stickers.png";
@@ -232,6 +232,7 @@ void RenderSystem::render_batch() {
                                 vertices.data(), vertices.size(),
                                 indices.data(), indices.size());
             if(!res) SDL_Log("ERROR: SDL_RenderGeometry %s", SDL_GetError());
+            
         }
     }
 }

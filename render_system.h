@@ -1,5 +1,5 @@
 #pragma once
-#include "game.h"
+#include "components.h"
 #include <SDL3/SDL.h>
 
 #include <vector>
