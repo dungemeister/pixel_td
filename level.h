@@ -15,14 +15,16 @@ struct TileComponent{
     ,token()
     ,pos()
     ,occupied(0)
+    ,collide_rect()
     {}
 
-    TileComponent(size_t _row, size_t _column, const SDL_FPoint& _pos, const std::string& _token)
+    TileComponent(size_t _row, size_t _column, const SDL_FRect& rect, const std::string& _token)
     :row(_row)
     ,column(_column)
     ,token(_token)
-    ,pos(_pos)
+    ,pos({rect.x, rect.y})
     ,occupied(0)
+    ,collide_rect(rect)
     {}
 
     size_t      row;
@@ -30,6 +32,7 @@ struct TileComponent{
     std::string token;
     SDL_FPoint  pos;
     int         occupied;
+    SDL_FRect   collide_rect;
 
     const static int grass_tile_int   = 0;
     const static int spawner_tile_int = 1;
@@ -39,17 +42,19 @@ struct TileComponent{
 };
 
 struct RoadTileComponent{
-    RoadTileComponent(size_t _row, size_t _column, Vector2D pos)
+    RoadTileComponent(size_t _row, size_t _column, const SDL_FRect& rect)
     :row(_row)
     ,column(_column)
-    ,pos(pos)
+    ,pos({rect.x, rect.y})
     ,dir()
+    ,collide_rect(rect)
     {}
 
     size_t      row;
     size_t      column;
     Vector2D    pos;
     Vector2D    dir;
+    SDL_FRect   collide_rect;
 };
 
 class Level{
@@ -62,6 +67,7 @@ public:
     ,m_pos()
     ,m_level_width(0)
     ,m_level_height(0)
+    ,m_castle_index(0)
     {}
 
     Level(std::string map_file, SDL_FPoint pos_coords, SDL_FPoint size)
@@ -89,18 +95,19 @@ public:
         m_tile_height = m_level_height / m_rows;
         std::cout << "Size " << m_rows << "x" << m_columns << "\n";
         int row = 0;
-        int castle_index = 0;
         while(std::getline(f, line)){
             std::stringstream ss(line);
             int column = 0;
             while (std::getline(ss, token, ' ')) {
                 if (!token.empty()) { // Avoid adding empty strings if there are multiple spaces
                     m_tokens.push_back(token);
-                    SDL_FPoint tile_pos = {m_pos.x + column * m_tile_width,
-                            m_pos.y + row * m_tile_height};
-                    m_tiles.emplace_back(row, column, tile_pos, token);
+                    SDL_FRect tile_rect = {m_pos.x + column * m_tile_width,
+                                           m_pos.y + row * m_tile_height,
+                                           m_tile_width,
+                                           m_tile_height};
+                    m_tiles.emplace_back(row, column, tile_rect, token);
                     if(atoi(token.c_str()) == TileComponent::castle_tile_int){
-                        castle_index = column + row * m_columns;
+                        m_castle_index = column + row * m_columns;
                     }
                 }
                 column++;
@@ -109,7 +116,7 @@ public:
         }
 
         std::vector<std::pair<int, int>> neighbours = {{0, 1}, {0, -1}, {1, 0}, {-1, 0}};
-        int cur_index = castle_index;
+        int cur_index = m_castle_index;
         while(atoi(m_tokens[cur_index].c_str()) != TileComponent::spawner_tile_int){
             for(auto neigh: neighbours){
 
@@ -123,12 +130,11 @@ public:
                      token_val == TileComponent::road_tile_int)){
                     if(is_road_tile(row, column)) continue;
 
-
-                    
-
-                    Vector2D pos = {m_pos.x + cur_column * m_tile_width,
-                                    m_pos.y + cur_row * m_tile_height};
-                    m_road_tiles.emplace_back(cur_row, cur_column, pos);
+                    SDL_FRect rect = {m_pos.x + cur_column * m_tile_width,
+                                      m_pos.y + cur_row * m_tile_height,
+                                      m_tile_width,
+                                      m_tile_height};
+                    m_road_tiles.emplace_back(cur_row, cur_column, rect);
                     set_tile_occupied(cur_row, cur_column, 1);
                     cur_index = column + row * m_columns;
                     break;
@@ -152,20 +158,26 @@ public:
     bool set_tile_occupied(int row, int column, int state);
     void calc_road_directions();
     bool is_road_tile(int row, int column);
+    bool is_road_tile(const SDL_FPoint& pos);
     bool road_tile_has_dir(int row, int column);
     std::vector<RoadTileComponent> get_road_tiles() const { return m_road_tiles; }
     Vector2D get_dir(Vector2D pos);
     RoadTileComponent& get_road_tile(int row, int column);
     Vector2D get_tile_center(Vector2D pos);
+    Vector2D get_castle_pos() { return {m_tiles[m_castle_index].pos.x, m_tiles[m_castle_index].pos.y}; }
+    TileComponent get_castle_tile() const { return m_tiles[m_castle_index]; }
+    bool is_pos_in_castle (Vector2D pos);
 private:
     std::vector<std::string> m_tokens;
     size_t                   m_columns;   
     size_t                   m_rows;   
-    float                   m_tile_width;
-    float                   m_tile_height;
-    float                   m_level_width;
-    float                   m_level_height;
+    float                    m_tile_width;
+    float                    m_tile_height;
+    float                    m_level_width;
+    float                    m_level_height;
     SDL_FPoint               m_pos;
+    size_t                   m_castle_index;
+
     std::vector<TileComponent> m_tiles;
     std::vector<RoadTileComponent> m_road_tiles;
     std::string              m_file;

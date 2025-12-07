@@ -59,6 +59,15 @@ bool Level::is_road_tile(int row, int column){
     return false;
 }
 
+bool Level::is_road_tile(const SDL_FPoint& pos){
+    for(auto road_tile: m_road_tiles){
+        if(SDL_PointInRectFloat(&pos, &road_tile.collide_rect)){
+            return true;
+        }
+    }
+    return false;
+}
+
 bool Level::road_tile_has_dir(int row, int column){
     for(auto road_tile: m_road_tiles){
         if(row == road_tile.row && column == road_tile.column && road_tile.dir.x != road_tile.dir.y)
@@ -124,4 +133,10 @@ Vector2D Level::get_tile_center(Vector2D pos){
         return {tile_opt.value().pos.x + m_tile_width / 2, tile_opt.value().pos.y + m_tile_height / 2};
     }
     return {};
+}
+
+bool Level::is_pos_in_castle (Vector2D pos){
+    SDL_FPoint point = {pos.x, pos.y};
+    auto tile = get_castle_tile();
+    return SDL_PointInRectFloat(&point, &tile.collide_rect);
 }

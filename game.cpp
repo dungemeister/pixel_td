@@ -216,8 +216,11 @@ void Game::loop(){
 }
 
 void Game::handle_mouse_event(Entities& objects, const SDL_MouseButtonEvent& mouse_event){
+    SDL_FPoint mouse_pos = {mouse_event.x, mouse_event.y};
+    Vector2D   mouse_vec = {mouse_event.x, mouse_event.y};
+
     if(mouse_event.button == SDL_BUTTON_LEFT){
-        auto tile = m_cur_level.get_tile({mouse_event.x, mouse_event.y});
+        auto tile = m_cur_level.get_tile(mouse_pos);
         if(tile.has_value() && tile.value().occupied == 0){
             if(add_tower(objects, RocketTower, tile.value()))
                 std::cout << "Added tower to tile [" << tile.value().row << ", "
@@ -231,11 +234,14 @@ void Game::handle_mouse_event(Entities& objects, const SDL_MouseButtonEvent& mou
         }
     }
     else if(mouse_event.button == SDL_BUTTON_RIGHT){
-        add_target(objects, {mouse_event.x, mouse_event.y});
+        add_target(objects, mouse_vec);
     }
     else if(mouse_event.button == SDL_BUTTON_MIDDLE){
-        spawn_enemies_targeted(objects, {RandomFloat(10., 500), RandomFloat(10., 500)},
-         {mouse_event.x, mouse_event.y});
+        if(m_cur_level.is_road_tile(mouse_pos)){
+
+            spawn_enemies_targeted(objects, {RandomFloat(10., 500), RandomFloat(10., 500)},
+            mouse_pos);
+        }
     }
 }
 
@@ -270,6 +276,7 @@ void Game::update_game(float deltatime){
     // std::cout << deltatime <<"\n";
     // m_animation_system.update(s_objects, deltatime);
     m_move_system.update(m_objects, m_cur_level, deltatime);
+    m_castle_damage_system.update(m_objects, m_cur_level, deltatime);
 
     m_render_system->clean_batch_frame();
     m_render_system->clean_frame();

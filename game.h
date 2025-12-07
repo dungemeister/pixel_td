@@ -5,6 +5,7 @@
 #include "render_system.h"
 #include "level.h"
 #include "animation_system.h"
+#include "castle_damage_system.h"
 #include "move_system.h"
 
 class Game{
@@ -25,6 +26,7 @@ private:
     RenderSystem*       m_render_system;
     AnimationSystem     m_animation_system;
     MoveSystem          m_move_system;
+    CastleDamageSystem  m_castle_damage_system;
     Entities            m_objects;
 
     std::vector<Level> m_levels;

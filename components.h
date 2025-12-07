@@ -122,6 +122,12 @@ struct Entities{
         if(it != m_names.end()){
             size_t id = it - m_names.begin();
             std::cout << "Found '" << name << "' at ID " << id << std::endl;
+            remove_object(id);
+        }
+    }
+
+    void remove_object(int id){
+        if(id < size()){
             m_names.erase(m_names.begin() + id);
             m_positions.erase(m_positions.begin() + id);
             m_moves.erase(m_moves.begin() + id);

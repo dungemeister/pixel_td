@@ -57,7 +57,7 @@ public:
         Vector2D toCenter = laneCenter - pos;
         float distanceFromCenter = toCenter.magnitude();
         float laneWidth = 20.f;
-        float maxForce = 0.2f;
+        float maxForce = .2f;
         // Если мы слишком далеко от центра, мягко возвращаем
         if (distanceFromCenter > laneWidth * 0.4) {
             // Сила тем сильнее, чем дальше от центра
