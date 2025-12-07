@@ -28,6 +28,8 @@ typedef struct
 struct PositionComponent{
     float x,y;
     float angle;
+
+    Vector2D get_vector2d() { return {x, y}; }
 };
 struct SpriteComponent{
     float r, g, b;

@@ -7,6 +7,7 @@
 #include "animation_system.h"
 #include "castle_damage_system.h"
 #include "move_system.h"
+#include "enemy_collision_system.h"
 
 class Game{
 public:
@@ -27,6 +28,7 @@ private:
     AnimationSystem     m_animation_system;
     MoveSystem          m_move_system;
     CastleDamageSystem  m_castle_damage_system;
+    EnemyCollistionSystem m_enemy_collision_system;
     Entities            m_objects;
 
     std::vector<Level> m_levels;
@@ -46,5 +48,5 @@ private:
     void handle_mouse_event(Entities& objects, const SDL_MouseButtonEvent& mouse_event);
     bool add_tower(Entities& objects, TowerType type, const TileComponent& tile);
     void add_target(Entities& objects, const Vector2D& pos);
-    void spawn_enemies_targeted(Entities& objects, const SDL_FPoint& target, const SDL_FPoint& spawn_pos);
+    void spawn_enemies_targeted(Entities& objects, const Vector2D& target, const SDL_FPoint& spawn_pos);
 };

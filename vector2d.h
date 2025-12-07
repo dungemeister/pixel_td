@@ -1,5 +1,6 @@
 #pragma once
 #include <cmath>
+#include <SDL3/SDL.h>
 
 class Vector2D
 {
@@ -48,6 +49,6 @@ public:
 
         return *this;
     }
-	
+	SDL_FPoint get_sdl_point() const { return {x, y}; }
     float x, y;
 };

@@ -68,7 +68,7 @@ void Game::init_render_system(){
 }
 
 void Game::init_game(){
-    SDL_FPoint level_size = {m_width * 0.8f, m_height * 0.8f};
+    SDL_FPoint level_size = {1024, 1024};
     SDL_FPoint level_pos = {(m_width - level_size.x) / 2, (m_height - level_size.y) / 2};
     m_levels.emplace_back("assets/map/level2.map", level_pos, level_size);
     m_levels.emplace_back("assets/map/level1.map", level_pos, level_size);
@@ -234,13 +234,13 @@ void Game::handle_mouse_event(Entities& objects, const SDL_MouseButtonEvent& mou
         }
     }
     else if(mouse_event.button == SDL_BUTTON_RIGHT){
-        add_target(objects, mouse_vec);
+        if(!m_cur_level.is_road_tile(mouse_pos)){
+            add_target(objects, mouse_vec);
+        }
     }
     else if(mouse_event.button == SDL_BUTTON_MIDDLE){
         if(m_cur_level.is_road_tile(mouse_pos)){
-
-            spawn_enemies_targeted(objects, {RandomFloat(10., 500), RandomFloat(10., 500)},
-            mouse_pos);
+            spawn_enemies_targeted(objects, m_target, mouse_pos);
         }
     }
 }
@@ -274,9 +274,10 @@ void Game::handle_input(){
 
 void Game::update_game(float deltatime){
     // std::cout << deltatime <<"\n";
-    // m_animation_system.update(s_objects, deltatime);
     m_move_system.update(m_objects, m_cur_level, deltatime);
     m_castle_damage_system.update(m_objects, m_cur_level, deltatime);
+    m_enemy_collision_system.update(m_objects, m_cur_level, deltatime);
+    // m_animation_system.update(s_objects, deltatime);
 
     m_render_system->clean_batch_frame();
     m_render_system->clean_frame();
@@ -302,7 +303,6 @@ void Game::update_game(float deltatime){
         }
         else{
             spr_data.flag = fUpperLeftSprite;
-
         }
 
         if(m_objects.m_flags[i] & fEntitySpriteBatch){
@@ -423,7 +423,7 @@ void Game::add_target(Entities& objects, const Vector2D& pos){
 
 }
 
-void Game::spawn_enemies_targeted(Entities& objects, const SDL_FPoint& target, const SDL_FPoint& spawn_pos){
+void Game::spawn_enemies_targeted(Entities& objects, const Vector2D& target, const SDL_FPoint& spawn_pos){
     auto id = objects.add_object("enemy");
     auto tile_size = m_cur_level.get_tile_size();
     auto path = m_cur_level.get_road_tiles();
@@ -451,7 +451,7 @@ void Game::spawn_enemies_targeted(Entities& objects, const SDL_FPoint& target, c
 
     objects.m_moves[id].speed = RandomFloat(10., 20.);
     objects.m_moves[id].targeted = 1;
-    objects.m_moves[id].target = m_target;
+    objects.m_moves[id].target = target;
 
     // objects.m_moves[id].rotation_angle = RandomFloat(-1.f, 1.f);
     objects.m_flags[id] |= fEntityMove;
