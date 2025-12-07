@@ -15,8 +15,8 @@ public:
                 if((objects.m_types[id2] & EntityType::fEnemy) == 0) continue;
 
                 if (circles_overlap(
-                    objects.m_positions[id1].get_vector2d(), 10,
-                    objects.m_positions[id2].get_vector2d(), 10)) {
+                    objects.m_positions[id1].get_vector2d(), 10.f,
+                    objects.m_positions[id2].get_vector2d(), 10.f)) {
                     
                     collisions.emplace_back(id1, id2);
                 }

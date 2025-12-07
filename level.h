@@ -117,7 +117,7 @@ public:
 
         std::vector<std::pair<int, int>> neighbours = {{0, 1}, {0, -1}, {1, 0}, {-1, 0}};
         int cur_index = m_castle_index;
-        while(atoi(m_tokens[cur_index].c_str()) != TileComponent::spawner_tile_int){
+        while(cur_index > 0){
             for(auto neigh: neighbours){
 
                 int cur_row = cur_index / m_columns;
@@ -126,8 +126,9 @@ public:
                 int row = cur_index / m_columns + neigh.second;
                 int column = cur_index % m_columns+ neigh.first;
                 auto token_val = atoi(m_tokens[column + row * m_columns].c_str());
-                if( (token_val == TileComponent::spawner_tile_int ||
-                     token_val == TileComponent::road_tile_int)){
+                if( token_val == TileComponent::spawner_tile_int ||
+                    token_val == TileComponent::road_tile_int){
+                    
                     if(is_road_tile(row, column)) continue;
 
                     SDL_FRect rect = {m_pos.x + cur_column * m_tile_width,
@@ -139,6 +140,14 @@ public:
                     cur_index = column + row * m_columns;
                     break;
                 }
+            }
+            if(atoi(m_tokens[cur_index].c_str()) == TileComponent::spawner_tile_int){
+                SDL_FRect rect = {m_pos.x + (cur_index % m_columns) * m_tile_width,
+                                      m_pos.y + (cur_index / m_columns) * m_tile_height,
+                                      m_tile_width,
+                                      m_tile_height};
+                m_road_tiles.emplace_back(cur_index / m_columns, cur_index % m_columns, rect);
+                cur_index = -1;
             }
 
         }

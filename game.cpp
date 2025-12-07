@@ -233,12 +233,12 @@ void Game::handle_mouse_event(Entities& objects, const SDL_MouseButtonEvent& mou
                          ". Tile already occupied or not in level map" << std::endl;
         }
     }
-    else if(mouse_event.button == SDL_BUTTON_RIGHT){
+    else if(mouse_event.button == SDL_BUTTON_MIDDLE){
         if(!m_cur_level.is_road_tile(mouse_pos)){
             add_target(objects, mouse_vec);
         }
     }
-    else if(mouse_event.button == SDL_BUTTON_MIDDLE){
+    else if(mouse_event.button == SDL_BUTTON_RIGHT){
         if(m_cur_level.is_road_tile(mouse_pos)){
             spawn_enemies_targeted(objects, m_target, mouse_pos);
         }
@@ -449,7 +449,8 @@ void Game::spawn_enemies_targeted(Entities& objects, const Vector2D& target, con
     objects.m_borders[id].y_max = (spawn_pos.y + tile_size.y / 4);
     objects.m_flags[id] |= fEntityMapBorder;
 
-    objects.m_moves[id].speed = RandomFloat(10., 20.);
+    // objects.m_moves[id].speed = RandomFloat(10., 20.);
+    objects.m_moves[id].speed = 10.f;
     objects.m_moves[id].targeted = 1;
     objects.m_moves[id].target = target;
 
