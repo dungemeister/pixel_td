@@ -25,7 +25,13 @@ public:
         load_texture("assets/rocket_tower.png");
         load_texture("assets/jotaro-kujo-josuke.png");
         load_texture("assets/quot-stickers.png");
+        load_texture("assets/grass_tile_00.png");
         load_texture("assets/grass_tile_01.png");
+        load_texture("assets/grass_tile_02.png");
+        load_texture("assets/grass_tile_03.png");
+        load_texture("assets/enemy.png");
+        load_texture("assets/portal.png");
+        load_texture("assets/pentagram_portal.png");
     }
 
     void add_to_frame(const sprite_data_t&& data);
@@ -48,4 +54,5 @@ private:
     SDL_Texture* get_texture(std::string);
     bool render_sprite(const sprite_data_t& sprite);
     void add_sprite_vertices(SDL_Texture* texture, float x, float y, float w, float h);
+    std::vector<std::string> choose_sprite_path(int id);
 };

@@ -3,6 +3,15 @@
 #include <string>
 #include <math.h>
 #include "misc.h"
+#include <algorithm>
+#include <iostream>
+#include <SDL3/SDL.h>
+#include "vector2d.h"
+
+enum SpriteFlag{
+    fUpperLeftSprite,
+    fCenterSprite,
+};
 
 typedef struct
 {
@@ -13,6 +22,7 @@ typedef struct
     float angle;
     int sprite;
     int border;
+    int flag;
 } sprite_data_t;
 
 struct PositionComponent{
@@ -27,17 +37,19 @@ struct SpriteComponent{
 };
 
 struct MoveComponent{
-    float velX, velY;
+    float speed;
     float rotation_angle;
+    Vector2D target;
+    int targeted;
     void Initialize(float minSpeed, float maxSpeed)
     {
         // random angle
         float angle = RandomFloat01() * 3.1415926f * 2;
         // random movement speed between given min & max
         float speed = RandomFloat(minSpeed, maxSpeed);
-        // velocity x & y components
-        velX = cosf(angle) * speed;
-        velY = sinf(angle) * speed;
+        // // velocity x & y components
+        // velX = cosf(angle) * speed;
+        // velY = sinf(angle) * speed;
     }
 
 };
@@ -53,8 +65,12 @@ typedef int EntityType_t;
 
 enum EntityType{
     fTile       = 1 << 0,
-    fTower      = 1 << 1,
-    fEnemy      = 1 << 2,
+    fRoad       = 1 << 1,
+    fTower      = 1 << 2,
+    fEnemy      = 1 << 3,
+    fSpawner    = 1 << 4,
+    fCastle     = 1 << 5,
+    fTarget     = 1 << 6,
 };
 
 enum EntityFlag{
@@ -100,6 +116,20 @@ struct Entities{
         m_types.push_back(0);
 
         return id;
+    }
+    void remove_object(const std::string& name){
+        auto it = std::find(m_names.begin(), m_names.end(), name);
+        if(it != m_names.end()){
+            size_t id = it - m_names.begin();
+            std::cout << "Found '" << name << "' at ID " << id << std::endl;
+            m_names.erase(m_names.begin() + id);
+            m_positions.erase(m_positions.begin() + id);
+            m_moves.erase(m_moves.begin() + id);
+            m_sprites.erase(m_sprites.begin() + id);
+            m_flags.erase(m_flags.begin() + id);
+            m_borders.erase(m_borders.begin() + id);
+            m_types.erase(m_types.begin() + id);
+        }
     }
 };
 

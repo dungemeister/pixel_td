@@ -3,6 +3,7 @@
 #include <SDL3_image/SDL_image.h>
 #include <SDL3/SDL_gpu.h>
 #include "figures.h"
+#include "level.h"
 
 void RenderSystem::add_to_frame(const sprite_data_t&& data){
     m_sprites.emplace_back(data);
@@ -70,110 +71,86 @@ SDL_Texture* RenderSystem::get_texture(std::string filepath){
 
 bool RenderSystem::render_sprite(const sprite_data_t& sprite){
     bool res;
-    std::string textpath;
-    switch(sprite.sprite){
-        case 0:
-            textpath = "assets/grass_tile_00.png";
-        break;
-        case 1:
-            textpath = "assets/grass_tile_01.png";
-        break;
-        case 2:
-            textpath = "assets/grass_tile_02.png";
-        break;
-        case 3:
-            textpath = "assets/grass_tile_03.png";
-        break;
-        case 4:
-            textpath = "assets/rocket_tower.png";
-        break;
-        default:
-            textpath = "assets/quot-stickers.png";
-        break;
-    }
-    SDL_Texture* text = get_texture(textpath);
-    float w, h;
-    SDL_GetTextureSize(text, &w, &h);
+    auto text_vec = choose_sprite_path(sprite.sprite);
+    for(auto& textpath: text_vec){
 
-    SDL_FRect dest_rect = {sprite.posX, sprite.posY, w, h};
-    if(sprite.width){
-        dest_rect.w = sprite.width;
-    }
-    if(sprite.height){
-        dest_rect.h = sprite.height;
-    }
-    SDL_FPoint center = {dest_rect.w / 2, dest_rect.h / 2};
-    float angle = sprite.angle;
-    res = SDL_RenderTextureRotated(m_renderer, text, nullptr, &dest_rect, angle, &center, SDL_FLIP_HORIZONTAL);
-    // res = SDL_RenderTexture(m_renderer, text, nullptr, &dest_rect);
-    // SDL_FPoint center = {sprite.posX, sprite.posY};
-    // SDL_RenderTextureRotated(m_renderer, text, nullptr, &dest_rect, 90.f, &center, SDL_FLIP_VERTICAL);
+        SDL_Texture* text = get_texture(textpath);
+        float w, h;
+        SDL_GetTextureSize(text, &w, &h);
 
-    if(sprite.border & fEntitySpriteBorder){
-        SDL_Surface* surface = SDL_CreateSurface(dest_rect.w, dest_rect.h, SDL_PIXELFORMAT_RGBA32);
-        if (!surface) {
-            printf("Failed to create surface: %s\n", SDL_GetError());
-            return false;
+        SDL_FRect dest_rect = {sprite.posX, sprite.posY, w, h};
+        if(sprite.width){
+            dest_rect.w = sprite.width;
         }
+        if(sprite.height){
+            dest_rect.h = sprite.height;
+        }
+        if(sprite.flag == fCenterSprite){
+
+            //Shift sprite to the center of position
+            dest_rect.x -= dest_rect.w / 2;
+            dest_rect.y -= dest_rect.h / 2;
+        }
+
+        SDL_FPoint center = {dest_rect.w / 2, dest_rect.h / 2};
+        float angle = sprite.angle;
+        SDL_FlipMode mode = SDL_FLIP_NONE;
+        res = SDL_RenderTextureRotated(m_renderer, text, nullptr, &dest_rect, angle, &center, mode);
+        // res = SDL_RenderTexture(m_renderer, text, nullptr, &dest_rect);
+        // SDL_FPoint center = {sprite.posX, sprite.posY};
+        // SDL_RenderTextureRotated(m_renderer, text, nullptr, &dest_rect, 90.f, &center, SDL_FLIP_VERTICAL);
+
+        if(sprite.border & fEntitySpriteBorder){
+            SDL_Surface* surface = SDL_CreateSurface(dest_rect.w, dest_rect.h, SDL_PIXELFORMAT_RGBA32);
+            if (!surface) {
+                printf("Failed to create surface: %s\n", SDL_GetError());
+                return false;
+            }
+            
+            // Заполняем поверхность прозрачным цветом
+            SDL_FillSurfaceRect(surface, NULL, 0x0);
         
-        // Заполняем поверхность прозрачным цветом
-        SDL_FillSurfaceRect(surface, NULL, 0x0);
-    
-        // Рисуем контур прямоугольника
-        int border_thickness = 1.f;
-        SDL_Rect outer_rect = {0, 0, static_cast<int>(dest_rect.w), static_cast<int>(dest_rect.h)};
-        SDL_Rect inner_rect = {
-            border_thickness, 
-            border_thickness, 
-            static_cast<int>(dest_rect.w) - 2 * border_thickness, 
-            static_cast<int>(dest_rect.h) - 2 * border_thickness
-        };
+            // Рисуем контур прямоугольника
+            int border_thickness = 1.f;
+            SDL_Rect outer_rect = {0, 0, static_cast<int>(dest_rect.w), static_cast<int>(dest_rect.h)};
+            SDL_Rect inner_rect = {
+                border_thickness, 
+                border_thickness, 
+                static_cast<int>(dest_rect.w) - 2 * border_thickness, 
+                static_cast<int>(dest_rect.h) - 2 * border_thickness
+            };
 
 
-        // Заполняем весь прямоугольник цветом
-        SDL_FillSurfaceRect(surface, &outer_rect, SDL_MapRGBA(SDL_GetPixelFormatDetails(surface->format), nullptr, 0xFF, 0, 0, 0xFF));
-        // Вырезаем внутреннюю часть чтобы получить контур
-        SDL_FillSurfaceRect(surface, &inner_rect, SDL_MapRGBA(SDL_GetPixelFormatDetails(surface->format), nullptr, 0, 0, 0, 0));
-        SDL_Texture* border_text = SDL_CreateTextureFromSurface(m_renderer, surface);
-        res = SDL_RenderTextureRotated(m_renderer, border_text, nullptr, &dest_rect, angle, &center, SDL_FLIP_HORIZONTAL);
-        
-        SDL_DestroySurface(surface);
-        SDL_DestroyTexture(border_text);
+            // Заполняем весь прямоугольник цветом
+            SDL_FillSurfaceRect(surface, &outer_rect, SDL_MapRGBA(SDL_GetPixelFormatDetails(surface->format), nullptr, 0xFF, 0, 0, 0xFF));
+            // Вырезаем внутреннюю часть чтобы получить контур
+            SDL_FillSurfaceRect(surface, &inner_rect, SDL_MapRGBA(SDL_GetPixelFormatDetails(surface->format), nullptr, 0, 0, 0, 0));
+            SDL_Texture* border_text = SDL_CreateTextureFromSurface(m_renderer, surface);
+            res = SDL_RenderTextureRotated(m_renderer, border_text, nullptr, &dest_rect, angle, &center, SDL_FLIP_HORIZONTAL);
+            
+            SDL_DestroySurface(surface);
+            SDL_DestroyTexture(border_text);
 
-        // SDL_Surface* border_surface = SDL_CreateSurface(dest_rect.w, dest_rect.h, SDL_PIXELFORMAT_RGBA32);
-        // SDL_SetRenderDrawColor(m_renderer, 0xFF, 0x00, 0x00, 0xFF);
-        // res = SDL_RenderRect(m_renderer, &dest_rect);
-        // SDL_Color circle_color = {0x80, 0x00, 0x80, 0xFF};
-        // res = Circle::render_circle(m_renderer,
-        //                       dest_rect.x + dest_rect.w / 2,
-        //                       dest_rect.y + dest_rect.h / 2,
-        //                       SDL_sqrtf(dest_rect.w * dest_rect.w + dest_rect.h * dest_rect.h),
-        //                       circle_color);
-        // res = SDL_RenderTextureTiled(m_renderer, text, &r, scale, NULL);
+            // SDL_Surface* border_surface = SDL_CreateSurface(dest_rect.w, dest_rect.h, SDL_PIXELFORMAT_RGBA32);
+            // SDL_SetRenderDrawColor(m_renderer, 0xFF, 0x00, 0x00, 0xFF);
+            // res = SDL_RenderRect(m_renderer, &dest_rect);
+            // SDL_Color circle_color = {0x80, 0x00, 0x80, 0xFF};
+            // res = Circle::render_circle(m_renderer,
+            //                       dest_rect.x + dest_rect.w / 2,
+            //                       dest_rect.y + dest_rect.h / 2,
+            //                       SDL_sqrtf(dest_rect.w * dest_rect.w + dest_rect.h * dest_rect.h),
+            //                       circle_color);
+            // res = SDL_RenderTextureTiled(m_renderer, text, &r, scale, NULL);
+        }
     }
     return res;
 }
 
 void RenderSystem::add_sprite_to_batch(const sprite_data_t& sprite){
-    std::string textpath;
-    switch(sprite.sprite){
-        case 0:
-            textpath = "assets/grass_tile_00.png";
-        break;
-        case 1:
-            textpath = "assets/grass_tile_01.png";
-        break;
-        case 2:
-            textpath = "assets/grass_tile_02.png";
-        break;
-        case 3:
-            textpath = "assets/grass_tile_03.png";
-        break;
-        default:
-            textpath = "assets/quot-stickers.png";
-        break;
+    auto text_vec = choose_sprite_path(sprite.sprite);
+    for(auto& textpath: text_vec){
+        add_sprite_vertices(get_texture(textpath), sprite.posX, sprite.posY, sprite.width, sprite.height);
     }
-    add_sprite_vertices(get_texture(textpath), sprite.posX, sprite.posY, sprite.width, sprite.height);
 }
 
 void RenderSystem::add_sprite_vertices(SDL_Texture* texture, float x, float y, float w, float h) {
@@ -245,4 +222,45 @@ void RenderSystem::render_batch() {
 
 void RenderSystem::clean_frame(){
     m_sprites.clear();
+}
+
+std::vector<std::string> RenderSystem::choose_sprite_path(int id){
+    std::vector<std::string> vec;
+    switch(id){
+        case fTile:
+            vec.push_back("assets/grass_tile_00.png");
+            // textpath = "assets/grass_tile_00.png";
+        break;
+        case fSpawner:
+            vec.push_back("assets/grass_tile_00.png");
+            vec.push_back("assets/pentagram_portal.png");
+            // textpath = "assets/pentagram_portal.png";
+        break;
+        case fRoad:
+            vec.push_back("assets/grass_tile_02.png");
+            // textpath = "assets/grass_tile_02.png";
+        break;
+        case fCastle:
+            vec.push_back("assets/grass_tile_00.png");
+            vec.push_back("assets/castle.png");
+            // textpath = "assets/portal.png";
+        break;
+        case fTower:
+            vec.push_back("assets/rocket_tower.png");
+            // textpath = "assets/rocket_tower.png";
+        break;
+        case fEnemy:
+            vec.push_back("assets/enemy.png");
+            // textpath = "assets/enemy.png";
+        break;
+        case fTarget:
+            // vec.push_back("assets/portal2.png");
+            vec.push_back("assets/grass_tile_03.png");
+        break;
+        default:
+            vec.push_back("assets/quot-stickers.png");
+            // textpath = "assets/quot-stickers.png";
+        break;
+    }
+    return vec;
 }
