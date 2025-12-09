@@ -83,6 +83,12 @@ bool Level::set_tile_occupied(int row, int column, int state){
     return true;
 }
 
+bool Level::set_tile_decor_occupied(int row, int column, int state){
+    int index = column + row * m_columns;
+    m_tiles[index].decor_occupied = state;
+    return true;
+}
+
 void Level::calc_road_directions(){
     std::vector<std::pair<float, float>> neighbours = {{0, 1}, {0, -1}, {1, 0}, {-1, 0},};
 
@@ -141,4 +147,20 @@ bool Level::is_pos_in_castle (Vector2D pos){
 Vector2D Level::get_tile_position(int row, int column){
     auto tile = get_tile(row, column);
     return {tile.pos.x, tile.pos.y};
+}
+
+bool Level::is_occupied(const Vector2D& pos){
+    auto tile = get_tile(pos.get_sdl_point());
+    if(tile.has_value())
+        return tile.value().occupied;
+    SDL_Log("WARNING: pos (%d, %d) not in map", pos.x, pos.y);
+    return true;
+}
+
+bool Level::is_decor_occupied(const Vector2D& pos){
+    auto tile = get_tile(pos.get_sdl_point());
+    if(tile.has_value())
+        return tile.value().decor_occupied;
+    SDL_Log("WARNING: pos (%d, %d) not in map", pos.x, pos.y);
+    return true;
 }

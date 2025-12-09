@@ -15,6 +15,7 @@ struct TileComponent{
     ,token()
     ,pos()
     ,occupied(0)
+    ,decor_occupied(0)
     ,collide_rect()
     {}
 
@@ -24,6 +25,7 @@ struct TileComponent{
     ,token(_token)
     ,pos({rect.x, rect.y})
     ,occupied(0)
+    ,decor_occupied(0)
     ,collide_rect(rect)
     {}
 
@@ -32,6 +34,7 @@ struct TileComponent{
     std::string token;
     SDL_FPoint  pos;
     int         occupied;
+    int         decor_occupied;
     SDL_FRect   collide_rect;
 
     const static int grass_tile_int   = 0;
@@ -170,6 +173,7 @@ public:
     const SDL_FPoint get_tile_size() const { return {m_tile_width, m_tile_height}; }
 
     bool set_tile_occupied(int row, int column, int state);
+    bool set_tile_decor_occupied(int row, int column, int state);
     void calc_road_directions();
     bool is_road_tile(int row, int column);
     bool is_road_tile(const SDL_FPoint& pos);
@@ -187,6 +191,9 @@ public:
     TileComponent   get_spawner_tile() const { return m_tiles[m_spawner_index];}
 
     bool is_occupied(int row, int column) { return m_tiles[column + row * m_columns].occupied; }
+    bool is_occupied(const Vector2D& pos);
+    bool is_decor_occupied(int row, int column) { return m_tiles[column + row * m_columns].decor_occupied; }
+    bool is_decor_occupied(const Vector2D& pos);
 private:
     std::vector<std::string> m_tokens;
     size_t                   m_columns;   

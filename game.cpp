@@ -463,18 +463,26 @@ void Game::load_decorations(){
     auto spawner_pos = m_cur_level.get_spawner_pos();
     auto resolution = m_cur_level.get_resolution();
 
+//WARNING: sum of the decor elements should be less then grass tiles quantity otherwise deadlock
     load_decor_sprite(castle_pos, EntityType::CASTLE_DECOR);
     load_decor_sprite(spawner_pos, EntityType::SPAWNER_DECOR);
-    load_decor_random_sprites(EntityType::BUSH0_DECOR, 77);
-    load_decor_random_sprites(EntityType::BUSH1_DECOR, 77);
-    load_decor_random_sprites(EntityType::BUSH2_DECOR, 77);
+    load_decor_random_sprites(EntityType::BUSH0_DECOR, 33);
+    load_decor_random_sprites(EntityType::BUSH1_DECOR, 44);
+    load_decor_random_sprites(EntityType::BUSH2_DECOR, 40);
 
 }
 
 void Game::load_decor_sprite(const Vector2D& pos, EntityType type){
+    if(m_cur_level.is_decor_occupied(pos)){
+        SDL_Log("ERROR: fail to load decor sprite");
+        return;
+    }
+    //TODO refactor get functions and mb remove std::optional 
+    auto tile = m_cur_level.get_tile(pos.get_sdl_point()).value();
+    auto tile_pos = tile.pos;
     auto tile_size = m_cur_level.get_tile_size();
 
-    SDL_FRect dst = {pos.x, pos.y, tile_size.x, tile_size.y};
+    SDL_FRect dst = {tile_pos.x, tile_pos.y, tile_size.x, tile_size.y};
 
     EntityID obj = m_objects.add_object("decor");
     
@@ -495,6 +503,7 @@ void Game::load_decor_sprite(const Vector2D& pos, EntityType type){
     sprite.type = type;
     m_objects.m_systems[obj] |= eSpriteSystem;
     m_render_system->load_to_layer(sprite);
+    m_cur_level.set_tile_decor_occupied(tile.row, tile.column, 1);
 }
 
 void Game::load_decor_random_sprites(EntityType type, size_t size){
@@ -503,7 +512,7 @@ void Game::load_decor_random_sprites(EntityType type, size_t size){
     for(int i = 0; i < size; i++){
         auto row = rand() % resolution.first;
         auto column = rand() % resolution.second;
-        if(m_cur_level.is_road_tile(row, column) || m_cur_level.is_occupied(row, column)){
+        if(m_cur_level.is_road_tile(row, column) || m_cur_level.is_decor_occupied(row, column)){
             i--;
             continue;
         }
@@ -533,5 +542,6 @@ void Game::load_decor_random_sprites(EntityType type, size_t size){
         sprite.type = type;
         m_objects.m_systems[obj] |= eSpriteSystem;
         m_render_system->load_to_layer(sprite);
+        m_cur_level.set_tile_decor_occupied(row, column, 1);
     }
 }
