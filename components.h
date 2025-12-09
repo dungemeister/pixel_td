@@ -70,6 +70,7 @@ enum EntityType{
     TOWER      ,
     ENEMY      ,
     TARGET     ,
+    //EFFECTS LAYER
 };
 
 typedef int EntitySystems_t;

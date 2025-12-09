@@ -83,7 +83,7 @@ void Game::init_game(){
     m_render_system->register_type_sprite(EntityType::ROAD,             {"assets/dirt_road.png"});
     m_render_system->register_type_sprite(EntityType::TOWER,            {"assets/rocket_tower.png"});
     m_render_system->register_type_sprite(EntityType::ENEMY,            {"assets/enemy.png"});
-    m_render_system->register_type_sprite(EntityType::SPAWNER,          {"assets/dirt_road.png"});
+    m_render_system->register_type_sprite(EntityType::SPAWNER,          {"assets/dirt_road.png","assets/ground1.bmp"});
     m_render_system->register_type_sprite(EntityType::CASTLE,           {"assets/dirt_road.png"});
     m_render_system->register_type_sprite(EntityType::CASTLE_DECOR,     {"assets/statue.bmp"});
     m_render_system->register_type_sprite(EntityType::SPAWNER_DECOR,    {"assets/spawner.bmp"});
