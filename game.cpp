@@ -75,116 +75,24 @@ void Game::init_game(){
     m_cur_level = m_levels.back();
     m_levels.pop_back();
 
-    m_objects.reserve(100);
+    m_objects.reserve(256);
 
-    // EntityID obj = s_objects.add_object("tower");
-    
-    // s_objects.m_positions[obj].x = 0;
-    // s_objects.m_positions[obj].y = 0;
-    // s_objects.m_flags[obj] |= fEntityPosition;
+    //Register entities types
+    m_render_system->register_type_sprite(EntityType::UNDEFINED,        {"assets/quot_stickers.png"});
+    m_render_system->register_type_sprite(EntityType::TILE,             {"assets/grass.png"});
+    m_render_system->register_type_sprite(EntityType::ROAD,             {"assets/dirt_road.png"});
+    m_render_system->register_type_sprite(EntityType::TOWER,            {"assets/rocket_tower.png"});
+    m_render_system->register_type_sprite(EntityType::ENEMY,            {"assets/enemy.png"});
+    m_render_system->register_type_sprite(EntityType::SPAWNER,          {"assets/dirt_road.png"});
+    m_render_system->register_type_sprite(EntityType::CASTLE,           {"assets/dirt_road.png"});
+    m_render_system->register_type_sprite(EntityType::CASTLE_DECOR,     {"assets/statue.bmp"});
+    m_render_system->register_type_sprite(EntityType::SPAWNER_DECOR,    {"assets/spawner.bmp"});
+    m_render_system->register_type_sprite(EntityType::BUSH0_DECOR,      {"assets/bush0.bmp"});
+    m_render_system->register_type_sprite(EntityType::BUSH1_DECOR,      {"assets/bush1.bmp"});
+    m_render_system->register_type_sprite(EntityType::BUSH2_DECOR,      {"assets/bush2.bmp"});
 
-    // s_objects.m_sprites[obj].index = obj;
-    // s_objects.m_sprites[obj].r = 0.6;
-    // s_objects.m_sprites[obj].g = 0.6;
-    // s_objects.m_sprites[obj].b = 0.6;
-    // s_objects.m_sprites[obj].index = RandomInt(0,5);
-    // s_objects.m_flags[obj] |= fEntitySprite;
-
-    // s_objects.m_moves[obj].Initialize(10., 30.);
-    // s_objects.m_flags[obj] |= fEntityMove;
-
-    //Tiles
-    auto res = m_cur_level.get_resolution();
-    auto tokens = m_cur_level.get_tokens();
-    auto size = m_cur_level.get_size();
-    auto tile_size = m_cur_level.get_tile_size();
-    auto level_position = m_cur_level.get_position();
-    auto rows = res.first;
-    auto columns = res.second;
-
-    // int tile_width = std::min((m_width - 16*10) / res.second, 64UL);
-    // int tile_height = std::min((m_height - 9*10) / res.first, 64UL);
-
-    int tile_width = tile_size.x;
-    int tile_height = tile_size.y;
-    for(int r = 0; r < rows; r++){
-        for(int c = 0; c < columns; c++){
-
-            EntityID obj = m_objects.add_object("tile");
-            int sprite_index = std::atoi(tokens[columns * r + c].c_str());
-            {
-                auto tile = m_cur_level.get_tile(r, c);
-                auto tile_pos = tile.pos;
-
-                switch(sprite_index) {
-                case TileComponent::grass_tile_int:
-                    m_objects.m_sprites[obj].index = fTile;
-                    m_objects.m_sprites[obj].scale = 1;
-                    m_objects.m_sprites[obj].width = tile_width;
-                    m_objects.m_sprites[obj].height = tile_height;
-                    m_objects.m_sprites[obj].r = 0.6;
-                    m_objects.m_sprites[obj].g = 0.6;
-                    m_objects.m_sprites[obj].b = 0.6;
-                    m_objects.m_flags[obj] |= fEntitySpriteBatch | fEntitySpriteBorder;
-                break;
-                case TileComponent::road_tile_int:
-                    m_objects.m_sprites[obj].index = fRoad;
-                    m_objects.m_sprites[obj].scale = 1;
-                    m_objects.m_sprites[obj].width = tile_width;
-                    m_objects.m_sprites[obj].height = tile_height;
-                    m_objects.m_sprites[obj].r = 0.6;
-                    m_objects.m_sprites[obj].g = 0.6;
-                    m_objects.m_sprites[obj].b = 0.6;
-                    m_objects.m_flags[obj] |= fEntitySpriteBatch | fEntitySpriteBorder;
-                break;
-                case TileComponent::spawner_tile_int:
-                    m_objects.m_sprites[obj].index = fSpawner;
-                    m_objects.m_sprites[obj].scale = 1;
-                    m_objects.m_sprites[obj].width = tile_width;
-                    m_objects.m_sprites[obj].height = 0;
-                    m_objects.m_sprites[obj].r = 0.6;
-                    m_objects.m_sprites[obj].g = 0.6;
-                    m_objects.m_sprites[obj].b = 0.6;
-                    m_objects.m_flags[obj] |= fEntitySprite | fEntitySpriteBorder;
-                break;
-                case TileComponent::castle_tile_int:
-                    m_objects.m_sprites[obj].index = fCastle;
-                    m_objects.m_sprites[obj].scale = 1;
-                    m_objects.m_sprites[obj].width = tile_width;
-                    m_objects.m_sprites[obj].height = 0;
-                    m_objects.m_sprites[obj].r = 0.6;
-                    m_objects.m_sprites[obj].g = 0.6;
-                    m_objects.m_sprites[obj].b = 0.6;
-                    m_objects.m_flags[obj] |= fEntitySprite | fEntitySpriteBorder;
-                break;
-                    // s_objects.m_flags[obj] |= fEntitySprite;
-                }
-
-                m_objects.m_positions[obj].x = tile_pos.x;
-                m_objects.m_positions[obj].y = tile_pos.y;
-                m_objects.m_positions[obj].angle = 0;
-                m_objects.m_flags[obj] |= fEntityPosition;
-
-                m_objects.m_moves[obj].speed = RandomFloat(.1, 3.);
-                // m_objects.m_moves[obj].velY = RandomFloat(.1, 3.);
-                m_objects.m_moves[obj].rotation_angle = RandomFloat(-1.f, 1.f);
-                // s_objects.m_flags[obj] |= fEntityMove;
-
-                m_objects.m_borders[obj].x_min = tile_width * c;
-                m_objects.m_borders[obj].x_max = tile_width * c;
-                m_objects.m_borders[obj].y_min = tile_height * r;
-                m_objects.m_borders[obj].y_max = tile_height * r;
-                m_objects.m_flags[obj] |= fEntityMapBorder;
-
-                m_objects.m_types[obj] = fTile;
-            }
-
-            // std::cout << "Pos " << s_objects.m_positions[obj].x << " " << s_objects.m_positions[obj].y << "\n";
-
-        }
-
-    }
-
+    load_level_tiles();
+    load_decorations();
 }
 
 void Game::destroy_game(){
@@ -279,38 +187,9 @@ void Game::update_game(float deltatime){
     m_enemy_collision_system.update(m_objects, m_cur_level, deltatime);
     // m_animation_system.update(s_objects, deltatime);
 
-    m_render_system->clean_batch_frame();
-    m_render_system->clean_frame();
-    for(size_t i = 0, n = m_objects.size(); i != n; i++){
-        if(m_objects.m_flags[i] & fEntitySpriteBatch == 0 &&
-           m_objects.m_flags[i] & fEntitySprite == 0 ){
-            continue;
-        }
-
-        sprite_data_t spr_data;
-        spr_data.posX   = m_objects.m_positions[i].x;
-        spr_data.posY   = m_objects.m_positions[i].y;
-        spr_data.angle  = m_objects.m_positions[i].angle;
-        spr_data.colR   = m_objects.m_sprites[i].r;
-        spr_data.colG   = m_objects.m_sprites[i].g;
-        spr_data.colB   = m_objects.m_sprites[i].b;
-        spr_data.sprite = m_objects.m_sprites[i].index;
-        spr_data.width  = m_objects.m_sprites[i].width;
-        spr_data.height = m_objects.m_sprites[i].height;
-        spr_data.border = m_objects.m_flags[i] & fEntitySpriteBorder;
-        if(m_objects.m_types[i] & fEnemy){
-            spr_data.flag = fCenterSprite;
-        }
-        else{
-            spr_data.flag = fUpperLeftSprite;
-        }
-
-        if(m_objects.m_flags[i] & fEntitySpriteBatch){
-            m_render_system->add_sprite_to_batch(spr_data);
-        }
-        else if(m_objects.m_flags[i] & fEntitySprite)
-            m_render_system->add_to_frame(std::move(spr_data));
-    }
+    // m_render_system->clean_batch_frame();
+    // m_render_system->clean_frame();
+    
 }
 
 void Game::draw_output(){
@@ -318,8 +197,8 @@ void Game::draw_output(){
     SdlWrapper::W_SDL_SetRenderDrawColor(r, {0x18, 0x18, 0x18, 0xFF});
     SDL_RenderClear(r);
 
-    m_render_system->render_batch();
-    m_render_system->render();
+    // m_render_system->render_batch();
+    m_render_system->render(m_objects);
     // TextureTest::test_texture_rendering(r, "assets/rocket_tower.png");
     SDL_Color cursor_circle_color = {0xF7, 0x62, 0x18, 0x80};
     bool res = Circle::render_circle_filled(r, m_cursor_pos.x, m_cursor_pos.y, 100, cursor_circle_color);
@@ -340,29 +219,29 @@ bool Game::add_tower(Entities& objects, TowerType type, const TileComponent& til
     objects.m_positions[id].angle = 90;
     objects.m_positions[id].x = tile.pos.x;
     objects.m_positions[id].y = tile.pos.y;
-    objects.m_flags[id] |= fEntityPosition;
+    objects.m_systems[id] |= ePositionSystem;
 
-    objects.m_sprites[id].index = fTower;
-    objects.m_sprites[id].scale = 1;
-    objects.m_sprites[id].width = tile_size.x;
-    objects.m_sprites[id].height = tile_size.y;
-    objects.m_sprites[id].r = 0.6;
-    objects.m_sprites[id].g = 0.6;
-    objects.m_sprites[id].b = 0.6;
-    objects.m_flags[id] |= fEntitySprite;
+    // objects.m_sprites[id].index = EntityType::TOWER;
+    // objects.m_sprites[id].scale = 1;
+    // objects.m_sprites[id].width = tile_size.x;
+    // objects.m_sprites[id].height = tile_size.y;
+    // objects.m_sprites[id].r = 0.6;
+    // objects.m_sprites[id].g = 0.6;
+    // objects.m_sprites[id].b = 0.6;
+    // objects.m_flags[id] |= fEntitySprite;
 
     objects.m_borders[id].x_min = 0;
     objects.m_borders[id].x_max = 0;
     // objects.m_borders[id].y_min = (tile.pos.y - tile_size.y) / 2;
     objects.m_borders[id].y_min = (tile.pos.y - tile_size.y / 4);
     objects.m_borders[id].y_max = (tile.pos.y + tile_size.y / 4);
-    objects.m_flags[id] |= fEntityMapBorder;
+    // objects.m_flags[id] |= fEntityMapBorder;
 
     objects.m_moves[id].speed = 0;
     // objects.m_moves[id].rotation_angle = RandomFloat(-1.f, 1.f);
-    objects.m_flags[id] |= fEntityMove;
+    // objects.m_flags[id] |= fEntityMove;
 
-    objects.m_types[id] = fTower;
+    objects.m_types[id] = TOWER;
 
     return m_cur_level.set_tile_occupied(tile.row, tile.column, 1);
 
@@ -395,29 +274,29 @@ void Game::add_target(Entities& objects, const Vector2D& pos){
     objects.m_positions[id].angle = 0;
     objects.m_positions[id].x = pos.x;
     objects.m_positions[id].y = pos.y;
-    objects.m_flags[id] |= fEntityPosition;
+    // objects.m_flags[id] |= fEntityPosition;
 
-    objects.m_sprites[id].index = fTarget;
-    objects.m_sprites[id].scale = 1;
-    objects.m_sprites[id].width = tile_size.x;
-    objects.m_sprites[id].height = tile_size.y;
-    objects.m_sprites[id].r = 0.6;
-    objects.m_sprites[id].g = 0.6;
-    objects.m_sprites[id].b = 0.6;
-    objects.m_flags[id] |= fEntitySprite;
+    // objects.m_sprites[id].index = EntityType::TARGET;
+    // objects.m_sprites[id].scale = 1;
+    // objects.m_sprites[id].width = tile_size.x;
+    // objects.m_sprites[id].height = tile_size.y;
+    // objects.m_sprites[id].r = 0.6;
+    // objects.m_sprites[id].g = 0.6;
+    // objects.m_sprites[id].b = 0.6;
+    // objects.m_flags[id] |= fEntitySprite;
 
     objects.m_borders[id].x_min = 0;
     objects.m_borders[id].x_max = 0;
     // objects.m_borders[id].y_min = (tile.pos.y - tile_size.y) / 2;
     objects.m_borders[id].y_min = (pos.y - tile_size.y / 4);
     objects.m_borders[id].y_max = (pos.y + tile_size.y / 4);
-    objects.m_flags[id] |= fEntityMapBorder;
+    // objects.m_flags[id] |= fEntityMapBorder;
 
     objects.m_moves[id].speed = 0;
     // objects.m_moves[id].rotation_angle = RandomFloat(-1.f, 1.f);
-    objects.m_flags[id] |= fEntityMove;
+    // objects.m_flags[id] |= fEntityMove;
 
-    objects.m_types[id] = fTarget;
+    objects.m_types[id] = TARGET;
 
     std::cout << "New Target" << std::endl;
 
@@ -431,23 +310,28 @@ void Game::spawn_enemies_targeted(Entities& objects, const Vector2D& target, con
     objects.m_positions[id].angle = 0;
     objects.m_positions[id].x = spawn_pos.x;
     objects.m_positions[id].y = spawn_pos.y;
-    objects.m_flags[id] |= fEntityPosition;
+    objects.m_systems[id] |= ePositionSystem;
 
-    objects.m_sprites[id].index = fEnemy;
-    objects.m_sprites[id].scale = 1;
-    objects.m_sprites[id].width = tile_size.x * 0.5;
-    objects.m_sprites[id].height = tile_size.y * 0.5;
-    objects.m_sprites[id].r = 0.6;
-    objects.m_sprites[id].g = 0.6;
-    objects.m_sprites[id].b = 0.6;
-    objects.m_flags[id] |= fEntitySprite;
+    objects.m_sprites[id].posX = spawn_pos.x;
+    objects.m_sprites[id].posY = spawn_pos.y;
+    objects.m_sprites[id].width = tile_size.x;
+    objects.m_sprites[id].height = tile_size.y;
+    objects.m_sprites[id].scale = 0.5;
+    objects.m_sprites[id].colR = 0.6;
+    objects.m_sprites[id].colG = 0.6;
+    objects.m_sprites[id].colB = 0.6;
+    objects.m_sprites[id].angle = 0;
+    objects.m_sprites[id].flag = fCenterSprite;
+    objects.m_sprites[id].layer = SpriteLayer::ENTITY;
+    objects.m_sprites[id].type = EntityType::ENEMY;
+    objects.m_systems[id] |= eSpriteSystem;
 
     objects.m_borders[id].x_min = 0;
     objects.m_borders[id].x_max = 0;
     // objects.m_borders[id].y_min = (tile.pos.y - tile_size.y) / 2;
     objects.m_borders[id].y_min = (spawn_pos.y - tile_size.y / 4);
     objects.m_borders[id].y_max = (spawn_pos.y + tile_size.y / 4);
-    objects.m_flags[id] |= fEntityMapBorder;
+    // objects.m_flags[id] |= fEntityMapBorder;
 
     // objects.m_moves[id].speed = RandomFloat(10., 20.);
     objects.m_moves[id].speed = 10.f;
@@ -455,9 +339,199 @@ void Game::spawn_enemies_targeted(Entities& objects, const Vector2D& target, con
     objects.m_moves[id].target = target;
 
     // objects.m_moves[id].rotation_angle = RandomFloat(-1.f, 1.f);
-    objects.m_flags[id] |= fEntityMove;
+    objects.m_systems[id] |= eMoveSystem;
 
-    objects.m_types[id] = fEnemy;
+    objects.m_types[id] = EntityType::ENEMY;
+
+    m_render_system->load_to_layer(objects.m_sprites[id]);
+}
+
+void Game::load_level_tiles(){
+    //Tiles
+    auto res = m_cur_level.get_resolution();
+    auto tokens = m_cur_level.get_tokens();
+    auto size = m_cur_level.get_size();
+    auto tile_size = m_cur_level.get_tile_size();
+    auto level_position = m_cur_level.get_position();
+    auto rows = res.first;
+    auto columns = res.second;
+
+    int tile_width = tile_size.x;
+    int tile_height = tile_size.y;
+    for(int r = 0; r < rows; r++){
+        for(int c = 0; c < columns; c++){
+
+            EntityID obj = m_objects.add_object("tile");
+            int sprite_index = std::atoi(tokens[columns * r + c].c_str());
+            {
+                auto tile = m_cur_level.get_tile(r, c);
+                auto tile_pos = tile.pos;
+
+                m_objects.m_positions[obj].x = tile_pos.x;
+                m_objects.m_positions[obj].y = tile_pos.y;
+                m_objects.m_sprites[obj].posX = tile_pos.x;
+                m_objects.m_sprites[obj].posY = tile_pos.y;
+                m_objects.m_positions[obj].angle = 0;
+
+                switch(sprite_index) {
+                case TileComponent::grass_tile_int:
+                    m_objects.m_sprites[obj].width = tile_width;
+                    m_objects.m_sprites[obj].height = tile_height;
+                    m_objects.m_sprites[obj].scale = 1;
+                    m_objects.m_sprites[obj].colR = 0.6;
+                    m_objects.m_sprites[obj].colG = 0.6;
+                    m_objects.m_sprites[obj].colB = 0.6;
+                    m_objects.m_sprites[obj].angle = 0;
+                    m_objects.m_sprites[obj].flag = fUpperLeftSprite;
+                    m_objects.m_sprites[obj].layer = SpriteLayer::BACKGROUND;
+                    m_objects.m_sprites[obj].type = EntityType::TILE;
+                    m_objects.m_systems[obj] |= eSpriteSystem;
+                break;
+                case TileComponent::road_tile_int:
+                    m_objects.m_sprites[obj].width = tile_width;
+                    m_objects.m_sprites[obj].height = tile_height;
+                    m_objects.m_sprites[obj].scale = 1;
+                    m_objects.m_sprites[obj].colR = 0.6;
+                    m_objects.m_sprites[obj].colG = 0.6;
+                    m_objects.m_sprites[obj].colB = 0.6;
+                    m_objects.m_sprites[obj].angle = 0;
+                    m_objects.m_sprites[obj].flag = fUpperLeftSprite;
+                    m_objects.m_sprites[obj].layer = SpriteLayer::BACKGROUND;
+                    m_objects.m_sprites[obj].type = EntityType::ROAD;
+                    m_objects.m_systems[obj] |= eSpriteSystem;
+                break;
+                case TileComponent::spawner_tile_int:
+                    m_objects.m_sprites[obj].width = tile_width;
+                    m_objects.m_sprites[obj].height = tile_height;
+                    m_objects.m_sprites[obj].scale = 1;
+                    m_objects.m_sprites[obj].colR = 0.6;
+                    m_objects.m_sprites[obj].colG = 0.6;
+                    m_objects.m_sprites[obj].colB = 0.6;
+                    m_objects.m_sprites[obj].angle = 0;
+                    m_objects.m_sprites[obj].flag = fUpperLeftSprite;
+                    m_objects.m_sprites[obj].layer = SpriteLayer::BACKGROUND;
+                    m_objects.m_sprites[obj].type = EntityType::SPAWNER;
+                    m_objects.m_systems[obj] |= eSpriteSystem;
+                break;
+                case TileComponent::castle_tile_int:
+                    m_objects.m_sprites[obj].width = tile_width;
+                    m_objects.m_sprites[obj].height = tile_height;
+                    m_objects.m_sprites[obj].scale = 1;
+                    m_objects.m_sprites[obj].colR = 0.6;
+                    m_objects.m_sprites[obj].colG = 0.6;
+                    m_objects.m_sprites[obj].colB = 0.6;
+                    m_objects.m_sprites[obj].angle = 0;
+                    m_objects.m_sprites[obj].flag = fUpperLeftSprite;
+                    m_objects.m_sprites[obj].layer = SpriteLayer::BACKGROUND;
+                    m_objects.m_sprites[obj].type = EntityType::CASTLE;
+                    m_objects.m_systems[obj] |= eSpriteSystem;
+                break;
+                }
+
+                m_objects.m_systems[obj] |= ePositionSystem;
+
+                m_objects.m_moves[obj].speed = RandomFloat(.1, 3.);
+                // m_objects.m_moves[obj].velY = RandomFloat(.1, 3.);
+                m_objects.m_moves[obj].rotation_angle = RandomFloat(-1.f, 1.f);
+                // s_objects.m_flags[obj] |= fEntityMove;
+
+                m_objects.m_borders[obj].x_min = tile_width * c;
+                m_objects.m_borders[obj].x_max = tile_width * c;
+                m_objects.m_borders[obj].y_min = tile_height * r;
+                m_objects.m_borders[obj].y_max = tile_height * r;
+                m_objects.m_systems[obj] |= eMapBorderSystem;
+
+                m_objects.m_types[obj] = EntityType::TILE;
+            }
 
 
+        }
+
+    }
+    for(size_t i = 0, n = m_objects.size(); i != n; i++){
+        if((m_objects.m_systems[i] & eSpriteBatchSystem) == 0 &&
+           (m_objects.m_systems[i] & eSpriteSystem) == 0 ){
+            continue;
+        }
+        m_render_system->load_to_layer(m_objects.m_sprites[i]);
+    }
+}
+
+void Game::load_decorations(){
+    auto tile_size = m_cur_level.get_tile_size();
+    auto castle_pos = m_cur_level.get_castle_pos();
+    auto spawner_pos = m_cur_level.get_spawner_pos();
+    auto resolution = m_cur_level.get_resolution();
+
+    load_decor_sprite(castle_pos, EntityType::CASTLE_DECOR);
+    load_decor_sprite(spawner_pos, EntityType::SPAWNER_DECOR);
+    load_decor_random_sprites(EntityType::BUSH0_DECOR, 77);
+    load_decor_random_sprites(EntityType::BUSH1_DECOR, 77);
+    load_decor_random_sprites(EntityType::BUSH2_DECOR, 77);
+
+}
+
+void Game::load_decor_sprite(const Vector2D& pos, EntityType type){
+    auto tile_size = m_cur_level.get_tile_size();
+
+    SDL_FRect dst = {pos.x, pos.y, tile_size.x, tile_size.y};
+
+    EntityID obj = m_objects.add_object("decor");
+    
+    SpriteComponent& sprite = m_objects.m_sprites[obj];
+    float height_shift = 0.3; // Shifting y component to increase texture height
+    float width_shift = 0.0; // Shifting y component to increase texture height
+    sprite.posX = dst.x - (dst.w * width_shift);
+    sprite.posY = dst.y - (dst.h * height_shift);
+    sprite.width = dst.w * (1 + width_shift);
+    sprite.height = dst.h * (1 + height_shift);
+    sprite.scale = 1;
+    sprite.colR = 0.6;
+    sprite.colG = 0.6;
+    sprite.colB = 0.6;
+    sprite.angle = 0;
+    sprite.flag = fUpperLeftSprite;
+    sprite.layer = SpriteLayer::DECORATION;
+    sprite.type = type;
+    m_objects.m_systems[obj] |= eSpriteSystem;
+    m_render_system->load_to_layer(sprite);
+}
+
+void Game::load_decor_random_sprites(EntityType type, size_t size){
+    auto resolution = m_cur_level.get_resolution();
+    auto tile_size = m_cur_level.get_tile_size();
+    for(int i = 0; i < size; i++){
+        auto row = rand() % resolution.first;
+        auto column = rand() % resolution.second;
+        if(m_cur_level.is_road_tile(row, column) || m_cur_level.is_occupied(row, column)){
+            i--;
+            continue;
+        }
+        auto pos = m_cur_level.get_tile_position(row, column);
+        std::vector<SDL_FRect> subtiles = {{pos.x, pos.y, tile_size.x / 2, tile_size.y / 2},
+                                    {pos.x + tile_size.x / 2, pos.y, tile_size.x / 2, tile_size.y / 2},
+                                    {pos.x, pos.y + tile_size.y / 2, tile_size.x / 2, tile_size.y / 2},
+                                    {pos.x + tile_size.x / 2, pos.y + tile_size.y / 2, tile_size.x / 2, tile_size.y / 2}};
+        SDL_FRect& dst = subtiles[rand()%4];
+
+        EntityID obj = m_objects.add_object("decor");
+        
+        SpriteComponent& sprite = m_objects.m_sprites[obj];
+        float height_shift = 0.0; // Shifting y component to increase texture height
+        float width_shift = 0.0; // Shifting y component to increase texture height
+        sprite.posX = dst.x - (dst.w * width_shift);
+        sprite.posY = dst.y - (dst.h * height_shift);
+        sprite.width = dst.w * (1 + width_shift);
+        sprite.height = dst.h * (1 + height_shift);
+        sprite.scale = RandomFloat(1.f, 1.5f);
+        sprite.colR = 0.6;
+        sprite.colG = 0.6;
+        sprite.colB = 0.6;
+        sprite.angle = 0;
+        sprite.flag = fUpperLeftSprite;
+        sprite.layer = SpriteLayer::DECORATION;
+        sprite.type = type;
+        m_objects.m_systems[obj] |= eSpriteSystem;
+        m_render_system->load_to_layer(sprite);
+    }
 }

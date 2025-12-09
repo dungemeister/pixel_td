@@ -9,33 +9,24 @@
 #include "vector2d.h"
 
 enum SpriteFlag{
-    fUpperLeftSprite,
-    fCenterSprite,
+    fUpperLeftSprite = 1 << 0,
+    fCenterSprite    = 1 << 1,
+    fSpriteContour   = 1 << 2,
+    fSpriteStencil   = 1 << 3,
+    fSpriteBorder    = 1 << 4,
 };
 
-typedef struct
-{
-    float posX, posY;
-    float width, height;
-    float scale;
-    float colR, colG, colB;
-    float angle;
-    int sprite;
-    int border;
-    int flag;
-} sprite_data_t;
+enum SpriteLayer{
+    BACKGROUND,
+    DECORATION,
+    ENTITY,
+};
 
 struct PositionComponent{
     float x,y;
     float angle;
 
     Vector2D get_vector2d() { return {x, y}; }
-};
-struct SpriteComponent{
-    float r, g, b;
-    float scale;
-    float width, height;
-    int index;
 };
 
 struct MoveComponent{
@@ -62,26 +53,45 @@ struct BorderComponent{
     
 };
 
-typedef int EntityFlag_t;
-typedef int EntityType_t;
-
 enum EntityType{
-    fTile       = 1 << 0,
-    fRoad       = 1 << 1,
-    fTower      = 1 << 2,
-    fEnemy      = 1 << 3,
-    fSpawner    = 1 << 4,
-    fCastle     = 1 << 5,
-    fTarget     = 1 << 6,
+    UNDEFINED  = 0,
+    //BACKGROUND LAYER
+    TILE       ,
+    ROAD       ,
+    SPAWNER    ,
+    CASTLE     ,
+    //DECORATION LAYER
+    CASTLE_DECOR,
+    SPAWNER_DECOR,
+    BUSH0_DECOR,
+    BUSH1_DECOR,
+    BUSH2_DECOR,
+    //ENTITY LAYER
+    TOWER      ,
+    ENEMY      ,
+    TARGET     ,
 };
 
-enum EntityFlag{
-    fEntityPosition      = 1 << 0,
-    fEntityMove          = 1 << 1,
-    fEntitySprite        = 1 << 2,
-    fEntityMapBorder     = 1 << 3,
-    fEntitySpriteBatch   = 1 << 4,
-    fEntitySpriteBorder  = 1 << 5,
+typedef int EntitySystems_t;
+enum EntitySystems{
+    eDummySystem         = 1 << 0,
+    ePositionSystem      = 1 << 1,
+    eMoveSystem          = 1 << 2,
+    eSpriteSystem        = 1 << 3,
+    eMapBorderSystem     = 1 << 4,
+    eSpriteBatchSystem   = 1 << 5,
+};
+
+struct SpriteComponent
+{
+    float posX, posY;
+    float width, height;
+    float scale;
+    float colR, colG, colB;
+    float angle;
+    int flag;
+    SpriteLayer layer;
+    EntityType  type;
 };
 
 typedef size_t EntityID;
@@ -92,15 +102,15 @@ struct Entities{
     std::vector<MoveComponent>      m_moves;
     std::vector<SpriteComponent>    m_sprites;
     std::vector<BorderComponent>    m_borders;
-    std::vector<EntityFlag_t>       m_flags;
-    std::vector<EntityType_t>       m_types;
+    std::vector<EntitySystems_t>      m_systems;
+    std::vector<EntityType>         m_types;
 
     void reserve(size_t n){
         m_positions.reserve(n);
         m_names.reserve(n);
         m_moves.reserve(n);
         m_sprites.reserve(n);
-        m_flags.reserve(n);
+        m_systems.reserve(n);
         m_borders.reserve(n);
         m_types.reserve(n);
     }
@@ -113,9 +123,9 @@ struct Entities{
         m_positions.push_back(PositionComponent());
         m_moves.push_back(MoveComponent());
         m_sprites.push_back(SpriteComponent());
-        m_flags.push_back(0);
+        m_systems.push_back(EntitySystems::eDummySystem);
         m_borders.push_back(BorderComponent());
-        m_types.push_back(0);
+        m_types.push_back(EntityType::UNDEFINED);
 
         return id;
     }
@@ -134,7 +144,7 @@ struct Entities{
             m_positions.erase(m_positions.begin() + id);
             m_moves.erase(m_moves.begin() + id);
             m_sprites.erase(m_sprites.begin() + id);
-            m_flags.erase(m_flags.begin() + id);
+            m_systems.erase(m_systems.begin() + id);
             m_borders.erase(m_borders.begin() + id);
             m_types.erase(m_types.begin() + id);
         }

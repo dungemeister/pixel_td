@@ -7,7 +7,7 @@ public:
     void update(Entities& objects, Level& level, float deltatime){
     
         for(int id = 0, n = objects.size(); id < n; id++){
-            if(objects.m_flags[id] & fEntityMove == 0) continue;
+            if((objects.m_systems[id] & eMoveSystem) == 0) continue;
             
             if(objects.m_moves[id].targeted){
                 Vector2D pos = {objects.m_positions[id].x, objects.m_positions[id].y};
@@ -42,6 +42,8 @@ public:
                 
                 objects.m_positions[id].x = pos.x;
                 objects.m_positions[id].y = pos.y;
+                objects.m_sprites[id].posX = objects.m_positions[id].x;
+                objects.m_sprites[id].posY = objects.m_positions[id].y;
             }
             else{
 

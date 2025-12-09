@@ -5,18 +5,27 @@
 #include "figures.h"
 #include "level.h"
 
-void RenderSystem::add_to_frame(const sprite_data_t&& data){
-    m_sprites.emplace_back(data);
-}
-
-void RenderSystem::render(){
-
-    for(auto& sprite_data: m_sprites){
+void RenderSystem::render(const Entities& objects){
+    clean_frame();
+    for(auto& sprite: objects.m_sprites){
+        load_to_layer(sprite);
+    }
+    for(auto& sprite_data: m_background_sprites){
         if(!render_sprite(sprite_data)){
-            SDL_Log("render sprite: %s", SDL_GetError());
+            SDL_Log("render background sprite: %s", SDL_GetError());
         }
     }
     
+    for(auto& sprite_data: m_decoration_sprites){
+        if(!render_sprite(sprite_data)){
+            SDL_Log("render decoration sprite: %s", SDL_GetError());
+        }
+    }
+    for(auto& sprite_data: m_entity_sprites){
+        if(!render_sprite(sprite_data)){
+            SDL_Log("render entity sprite: %s", SDL_GetError());
+        }
+    }
 }
 
 void RenderSystem::init_custom_shaders(){
@@ -43,17 +52,80 @@ void RenderSystem::init_custom_shaders(){
     // SDL_SetRenderShader(m_renderer, m_textureOnlyShader);
 }
 SDL_Texture* RenderSystem::load_texture(std::string filepath){
-    SDL_Surface* surface = IMG_Load(filepath.c_str());
+    auto pos = filepath.find(".bmp");
+    SDL_Surface* surface = nullptr;
+    SDL_Texture* texture = nullptr;
+    if(pos == std::string::npos){
+
+        surface = IMG_Load(filepath.c_str());
+        if(!surface){
+            SDL_Log("IMG_Load: %s", SDL_GetError());
+            return nullptr;
+        }
+        texture = SDL_CreateTextureFromSurface(m_renderer, surface);
+        if(!texture){
+            SDL_Log("SDL_CreateTextureFromSurface: %s", SDL_GetError());
+            return nullptr;
+        }
+        m_textures.insert(std::pair{filepath, texture});
+    }
+    else{
+        surface = SDL_LoadBMP(filepath.c_str());
+        if(!surface){
+            SDL_Log("IMG_Load: %s", SDL_GetError());
+            return nullptr;
+        }
+        auto format_details = SDL_GetPixelFormatDetails(surface->format);
+        auto palette = SDL_GetSurfacePalette(surface);
+        auto color_key = SDL_MapRGB(format_details, palette, 0xFF, 0, 0xFF);
+        auto res = SDL_SetSurfaceColorKey(surface, true, color_key);
+
+        texture = SDL_CreateTextureFromSurface(m_renderer, surface);
+        if(!texture){
+            SDL_Log("SDL_CreateTextureFromSurface: %s", SDL_GetError());
+            return nullptr;
+        }
+        m_textures.insert(std::pair{filepath, texture});
+    }
+    SDL_DestroySurface(surface);
+    return texture;
+}
+
+SDL_Texture* RenderSystem::load_bush_texture(){
+    std::string filepath = "assets/bush_tiles.bmp";
+    // SDL_Surface* surface = IMG_Load(filepath.c_str());
+    SDL_Surface* surface = SDL_LoadBMP(filepath.c_str());
     if(!surface){
         SDL_Log("IMG_Load: %s", SDL_GetError());
         return nullptr;
     }
+    auto format_details = SDL_GetPixelFormatDetails(surface->format);
+    auto palette = SDL_GetSurfacePalette(surface);
+    auto color_key = SDL_MapRGB(format_details, palette, 0xFF, 0, 0xFF);
+    auto res = SDL_SetSurfaceColorKey(surface, true, color_key);
+
     SDL_Texture* texture = SDL_CreateTextureFromSurface(m_renderer, surface);
     if(!texture){
         SDL_Log("SDL_CreateTextureFromSurface: %s", SDL_GetError());
         return nullptr;
     }
     m_textures.insert(std::pair{filepath, texture});
+    
+    size_t columns = 8;
+    size_t rows = 5;
+    size_t bushes = rows * columns;
+    float w, h;
+    SDL_GetTextureSize(texture, &w, &h);
+    m_brushes_src.reserve(bushes);
+    for(int i = 0; i < bushes; i++){
+        SDL_FRect src = {.x = (w / columns) * (i % columns),
+                         .y = (h / rows) * (i / columns),
+                         .w = (w / columns) ,
+                         .h = (h / rows) ,};
+        
+        m_brushes_src.emplace_back("bush" + std::to_string(i), src);
+    }
+    SDL_DestroySurface(surface);
     return texture;
 }
 
@@ -69,29 +141,25 @@ SDL_Texture* RenderSystem::get_texture(std::string filepath){
     return text;
 }
 
-bool RenderSystem::render_sprite(const sprite_data_t& sprite){
-    bool res;
-    auto text_vec = choose_sprite_path(sprite.sprite);
-    for(auto& textpath: text_vec){
+bool RenderSystem::render_sprite(const SpriteComponent& sprite){
+    bool res = false;
+    auto textures = get_registered_type_textures(sprite.type);
+    auto textures_pathes = get_registered_type_textures_pathes(sprite.type);
+    for(const auto& text: textures){
 
-        SDL_Texture* text = get_texture(textpath);
-        float w, h;
-        SDL_GetTextureSize(text, &w, &h);
-
-        SDL_FRect dest_rect = {sprite.posX, sprite.posY, w, h};
-        if(sprite.width){
-            dest_rect.w = sprite.width;
-        }
-        if(sprite.height){
-            dest_rect.h = sprite.height;
-        }
+        // SDL_Texture* text = get_texture(textpath);
+        // float w, h;
+        // SDL_GetTextureSize(text, &w, &h);
+        SDL_FRect dest_rect = {sprite.posX,
+                               sprite.posY,
+                               sprite.width * sprite.scale,
+                               sprite.height * sprite.scale};
         if(sprite.flag == fCenterSprite){
 
             //Shift sprite to the center of position
             dest_rect.x -= dest_rect.w / 2;
             dest_rect.y -= dest_rect.h / 2;
         }
-
         SDL_FPoint center = {dest_rect.w / 2, dest_rect.h / 2};
         float angle = sprite.angle;
         SDL_FlipMode mode = SDL_FLIP_NONE;
@@ -99,8 +167,17 @@ bool RenderSystem::render_sprite(const sprite_data_t& sprite){
         // res = SDL_RenderTexture(m_renderer, text, nullptr, &dest_rect);
         // SDL_FPoint center = {sprite.posX, sprite.posY};
         // SDL_RenderTextureRotated(m_renderer, text, nullptr, &dest_rect, 90.f, &center, SDL_FLIP_VERTICAL);
-
-        if(sprite.border & fEntitySpriteBorder){
+        // if(sprite.layer == SpriteLayer::DECORATION){
+            
+        //     SDL_FRect bush_dest = {sprite.posX,
+        //                            sprite.posY,
+        //                            sprite.width * 0.5f,
+        //                            sprite.height * 0.5f};
+        //     auto bush_text = get_texture("assets/bush_tiles.bmp");
+        //     auto src = m_brushes_src[static_cast<int>(sprite.posX) % 40].second;
+        //     res = SDL_RenderTextureRotated(m_renderer, bush_text, &src, &bush_dest, angle, &center, mode);
+        // }
+        if(sprite.flag & fSpriteBorder){
             SDL_Surface* surface = SDL_CreateSurface(dest_rect.w, dest_rect.h, SDL_PIXELFORMAT_RGBA32);
             if (!surface) {
                 printf("Failed to create surface: %s\n", SDL_GetError());
@@ -146,10 +223,10 @@ bool RenderSystem::render_sprite(const sprite_data_t& sprite){
     return res;
 }
 
-void RenderSystem::add_sprite_to_batch(const sprite_data_t& sprite){
-    auto text_vec = choose_sprite_path(sprite.sprite);
-    for(auto& textpath: text_vec){
-        add_sprite_vertices(get_texture(textpath), sprite.posX, sprite.posY, sprite.width, sprite.height);
+void RenderSystem::add_sprite_to_batch(const SpriteComponent& sprite){
+    auto textures = get_registered_type_textures(sprite.type);
+    for(const auto& text: textures){
+        add_sprite_vertices(text, sprite.posX, sprite.posY, sprite.width, sprite.height);
     }
 }
 
@@ -209,8 +286,8 @@ void RenderSystem::render_batch() {
     for (auto& [texture, vertices] : m_vertexBatches) {
         auto& indices = m_indexBatches[texture];
         if (!vertices.empty()) {
-            SDL_SetTextureBlendMode(texture, SDL_BLENDMODE_BLEND);
-            SDL_SetRenderDrawBlendMode(m_renderer, SDL_BLENDMODE_BLEND);
+            // SDL_SetTextureBlendMode(texture, SDL_BLENDMODE_BLEND);
+            // SDL_SetRenderDrawBlendMode(m_renderer, SDL_BLENDMODE_BLEND);
             auto res = SDL_RenderGeometry(m_renderer, texture, 
                                 vertices.data(), vertices.size(),
                                 indices.data(), indices.size());
@@ -221,46 +298,54 @@ void RenderSystem::render_batch() {
 }
 
 void RenderSystem::clean_frame(){
-    m_sprites.clear();
+    m_background_sprites.clear();
+    m_decoration_sprites.clear();
+    m_entity_sprites.clear();
 }
 
-std::vector<std::string> RenderSystem::choose_sprite_path(int id){
-    std::vector<std::string> vec;
-    switch(id){
-        case fTile:
-            vec.push_back("assets/grass_tile_00.png");
-            // textpath = "assets/grass_tile_00.png";
+void RenderSystem::load_to_layer(const SpriteComponent& sprite){
+
+    switch(sprite.layer){
+        case SpriteLayer::BACKGROUND:
+            m_background_sprites.emplace_back(sprite);
         break;
-        case fSpawner:
-            vec.push_back("assets/grass_tile_00.png");
-            vec.push_back("assets/pentagram_portal.png");
-            // textpath = "assets/pentagram_portal.png";
+        case SpriteLayer::DECORATION:
+            m_decoration_sprites.emplace_back(sprite);
         break;
-        case fRoad:
-            vec.push_back("assets/grass_tile_02.png");
-            // textpath = "assets/grass_tile_02.png";
-        break;
-        case fCastle:
-            vec.push_back("assets/grass_tile_00.png");
-            vec.push_back("assets/castle.png");
-            // textpath = "assets/portal.png";
-        break;
-        case fTower:
-            vec.push_back("assets/rocket_tower.png");
-            // textpath = "assets/rocket_tower.png";
-        break;
-        case fEnemy:
-            vec.push_back("assets/enemy.png");
-            // textpath = "assets/enemy.png";
-        break;
-        case fTarget:
-            // vec.push_back("assets/portal2.png");
-            vec.push_back("assets/grass_tile_03.png");
-        break;
-        default:
-            vec.push_back("assets/quot-stickers.png");
-            // textpath = "assets/quot-stickers.png";
+        case SpriteLayer::ENTITY:
+            m_entity_sprites.emplace_back(sprite);
         break;
     }
-    return vec;
+}
+
+void RenderSystem::register_type_sprite(EntityType type, const std::vector<std::string>& pathes){
+    std::vector<SDL_Texture*> type_textures;
+    for(const auto& texturepath: pathes){
+        auto text = get_texture(texturepath);
+        if(!text){
+            SDL_Log("ERROR: fail to register sprite for type %d", type);
+            continue;
+        }
+        type_textures.emplace_back(text);
+    }
+    m_registered_types.insert({type, pathes});
+    m_registered_textures.insert({type, type_textures});
+
+}
+std::vector<SDL_Texture*> RenderSystem::get_registered_type_textures(EntityType type){
+    auto it = m_registered_textures.find(type);
+    if(it != m_registered_textures.end()){
+        return it->second;
+    }
+    SDL_Log("WARNING: fail to get registered type %d textures", type);
+    return {};
+}
+
+std::vector<std::string> RenderSystem::get_registered_type_textures_pathes(EntityType type){
+    auto it = m_registered_types.find(type);
+    if(it != m_registered_types.end()){
+        return it->second;
+    }
+    SDL_Log("WARNING: fail to get registered type %d textures pathes", type);
+    return {};
 }

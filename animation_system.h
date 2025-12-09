@@ -5,10 +5,10 @@ struct AnimationSystem{
     void update(Entities& objects, float deltatime) {
         for(size_t i = 0; i < objects.size(); i++){
             
-            if(objects.m_flags[i] & fEntityPosition &&
-               objects.m_flags[i] & fEntityMove &&
-               objects.m_flags[i] & fEntityMapBorder &&
-               (objects.m_types[i] & fEnemy || objects.m_types[i] & fTower)){
+            if(objects.m_systems[i] & ePositionSystem &&
+               objects.m_systems[i] & eMoveSystem &&
+               objects.m_systems[i] & eMapBorderSystem &&
+               (objects.m_types[i] == ENEMY || objects.m_types[i] == TOWER)){
                 auto speed = objects.m_moves[i].speed * deltatime;
                 objects.m_positions[i].x += speed;
                 objects.m_positions[i].y += speed;

@@ -17,7 +17,6 @@ std::optional<SDL_FPoint> Level::get_tile_position(const SDL_FPoint& pos){
     if(row >= 0 && column >= 0)
     {
         auto tile = get_tile(row, column);
-        std::cout << "r" << tile.row << " c" << tile.column << std::endl;
         res = {tile.pos.x, tile.pos.y};
     }
 
@@ -91,10 +90,8 @@ void Level::calc_road_directions(){
         for(auto neigh: neighbours){
             int row    = neigh.second + it->row;
             int column = neigh.first + it->column;
-            std::cout << it->row << " " << it->column << " | " << row << " " << column << std::endl;
             if(is_road_tile(row, column) && !road_tile_has_dir(row, column)){
                 it->dir = Vector2D(neigh.first, neigh.second);
-                std::cout << "----------\n";
                 break;
             }
         }
@@ -139,4 +136,9 @@ bool Level::is_pos_in_castle (Vector2D pos){
     SDL_FPoint point = {pos.x, pos.y};
     auto tile = get_castle_tile();
     return SDL_PointInRectFloat(&point, &tile.collide_rect);
+}
+
+Vector2D Level::get_tile_position(int row, int column){
+    auto tile = get_tile(row, column);
+    return {tile.pos.x, tile.pos.y};
 }

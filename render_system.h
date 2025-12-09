@@ -11,7 +11,10 @@ class RenderSystem{
 public:    
     RenderSystem(SDL_Window* window)
     {
-        m_sprites.reserve(10);
+        m_background_sprites.reserve(10);
+        m_decoration_sprites.reserve(10);
+        m_entity_sprites.reserve(10);
+
         m_window = window;
         m_renderer = SDL_CreateRenderer(window, NULL);
         if(!m_renderer){
@@ -22,37 +25,41 @@ public:
         m_background_color.b = 0x18;
         m_background_color.a = 0xFF;
 
-        load_texture("assets/rocket_tower.png");
-        load_texture("assets/jotaro-kujo-josuke.png");
-        load_texture("assets/quot-stickers.png");
-        load_texture("assets/grass_tile_00.png");
-        load_texture("assets/grass_tile_01.png");
-        load_texture("assets/grass_tile_02.png");
-        load_texture("assets/grass_tile_03.png");
-        load_texture("assets/enemy.png");
-        load_texture("assets/portal.png");
-        load_texture("assets/pentagram_portal.png");
+        load_bush_texture();
     }
 
-    void add_to_frame(const sprite_data_t&& data);
-    void add_sprite_to_batch(const sprite_data_t& sprite);
-    void render();
+    void add_sprite_to_batch(const SpriteComponent& sprite);
+    void render(const Entities& objects);
     void render_batch();
     void clean_batch_frame();
     void clean_frame();
+    void load_to_layer(const SpriteComponent&);
+    void unload_to_layer(const SpriteComponent&);
+    bool is_type_valid(int type);
 
+    void register_type_sprite(EntityType type, const std::vector<std::string>& texturepath);
+    void unregister_type_sprite(EntityType type);
     SDL_Window* m_window;
-    std::vector<sprite_data_t> m_sprites;
+    std::vector<SpriteComponent> m_background_sprites;
+    std::vector<SpriteComponent> m_decoration_sprites;
+    std::vector<SpriteComponent> m_entity_sprites;
     SDL_Renderer* m_renderer;
     SDL_Color m_background_color;
-    std::unordered_map<std::string, SDL_Texture*> m_textures;
+
+    std::unordered_map<std::string, SDL_Texture*>             m_textures;
+    std::unordered_map<EntityType, std::vector<SDL_Texture*>> m_registered_textures;
+    std::unordered_map<EntityType, std::vector<std::string>>  m_registered_types;
     std::unordered_map<SDL_Texture*, std::vector<SDL_Vertex>> m_vertexBatches;
-    std::unordered_map<SDL_Texture*, std::vector<int>> m_indexBatches;
+    std::unordered_map<SDL_Texture*, std::vector<int>>        m_indexBatches;
 private:
-    void init_custom_shaders();
     SDL_Texture* load_texture(std::string);
+    void init_custom_shaders();
+    SDL_Texture* load_bush_texture();
     SDL_Texture* get_texture(std::string);
-    bool render_sprite(const sprite_data_t& sprite);
+    bool render_sprite(const SpriteComponent& sprite);
     void add_sprite_vertices(SDL_Texture* texture, float x, float y, float w, float h);
-    std::vector<std::string> choose_sprite_path(int id);
+    std::vector<SDL_Texture*> get_registered_type_textures(EntityType type);
+    std::vector<std::string> get_registered_type_textures_pathes(EntityType type);
+
+    std::vector<std::pair<std::string, SDL_FRect>> m_brushes_src;
 };

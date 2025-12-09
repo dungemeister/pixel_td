@@ -68,6 +68,7 @@ public:
     ,m_level_width(0)
     ,m_level_height(0)
     ,m_castle_index(0)
+    ,m_spawner_index(0)
     {}
 
     Level(std::string map_file, SDL_FPoint pos_coords, SDL_FPoint size)
@@ -76,6 +77,8 @@ public:
     ,m_level_height(size.y)
     ,m_tile_width(0)
     ,m_tile_height(0)
+    ,m_castle_index(0)
+    ,m_spawner_index(0)
     {
         m_pos = pos_coords;
         std::fstream f(map_file);
@@ -147,6 +150,7 @@ public:
                                       m_tile_width,
                                       m_tile_height};
                 m_road_tiles.emplace_back(cur_index / m_columns, cur_index % m_columns, rect);
+                m_spawner_index = cur_index;
                 cur_index = -1;
             }
 
@@ -158,6 +162,7 @@ public:
     std::pair<size_t, size_t> get_resolution() const { return {m_rows, m_columns}; }
     const std::vector<std::string>& get_tokens() const { return m_tokens; }
     std::optional<SDL_FPoint> get_tile_position(const SDL_FPoint& position);
+    Vector2D get_tile_position(int row, int column);
     TileComponent get_tile(int row, int column);
     std::optional<TileComponent> get_tile(const SDL_FPoint& position);
     const SDL_FPoint get_size() const { return {m_level_width, m_level_height};}
@@ -169,13 +174,19 @@ public:
     bool is_road_tile(int row, int column);
     bool is_road_tile(const SDL_FPoint& pos);
     bool road_tile_has_dir(int row, int column);
-    std::vector<RoadTileComponent> get_road_tiles() const { return m_road_tiles; }
     Vector2D get_dir(Vector2D pos);
-    RoadTileComponent& get_road_tile(int row, int column);
+    RoadTileComponent&              get_road_tile(int row, int column);
+    std::vector<RoadTileComponent>  get_road_tiles() const { return m_road_tiles; }
     Vector2D get_tile_center(Vector2D pos);
-    Vector2D get_castle_pos() { return {m_tiles[m_castle_index].pos.x, m_tiles[m_castle_index].pos.y}; }
-    TileComponent get_castle_tile() const { return m_tiles[m_castle_index]; }
-    bool is_pos_in_castle (Vector2D pos);
+
+    Vector2D        get_castle_pos() { return {m_tiles[m_castle_index].pos.x, m_tiles[m_castle_index].pos.y}; }
+    TileComponent   get_castle_tile() const { return m_tiles[m_castle_index]; }
+    bool            is_pos_in_castle (Vector2D pos);
+
+    Vector2D        get_spawner_pos() { return {m_tiles[m_spawner_index].pos.x, m_tiles[m_spawner_index].pos.y}; }
+    TileComponent   get_spawner_tile() const { return m_tiles[m_spawner_index];}
+
+    bool is_occupied(int row, int column) { return m_tiles[column + row * m_columns].occupied; }
 private:
     std::vector<std::string> m_tokens;
     size_t                   m_columns;   
@@ -186,6 +197,7 @@ private:
     float                    m_level_height;
     SDL_FPoint               m_pos;
     size_t                   m_castle_index;
+    size_t                   m_spawner_index;
 
     std::vector<TileComponent> m_tiles;
     std::vector<RoadTileComponent> m_road_tiles;
