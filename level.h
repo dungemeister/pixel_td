@@ -10,14 +10,7 @@
 
 struct TileComponent{
     TileComponent()
-    :row(0)
-    ,column(0)
-    ,token()
-    ,pos()
-    ,occupied(0)
-    ,decor_occupied(0)
-    ,collide_rect()
-    {}
+    :TileComponent(0, 0, {}, "") {}
 
     TileComponent(size_t _row, size_t _column, const SDL_FRect& rect, const std::string& _token)
     :row(_row)
@@ -28,6 +21,7 @@ struct TileComponent{
     ,decor_occupied(0)
     ,collide_rect(rect)
     ,center_pos(rect.x + rect.w / 2, rect.y + rect.h / 2)
+    ,dir()
     {}
 
     size_t      row;
@@ -38,6 +32,7 @@ struct TileComponent{
     int         decor_occupied;
     SDL_FRect   collide_rect;
     Vector2D    center_pos;
+    Vector2D    dir;
 
     const static int grass_tile_int   = 0;
     const static int spawner_tile_int = 1;
@@ -47,12 +42,16 @@ struct TileComponent{
 };
 
 struct RoadTileComponent{
+    RoadTileComponent()
+    :RoadTileComponent(0, 0, {}) {}
+
     RoadTileComponent(size_t _row, size_t _column, const SDL_FRect& rect)
     :row(_row)
     ,column(_column)
     ,pos({rect.x, rect.y})
     ,dir()
     ,collide_rect(rect)
+    ,center_pos(rect.x + rect.w / 2, rect.y + rect.h / 2)
     {}
 
     size_t      row;
@@ -60,6 +59,7 @@ struct RoadTileComponent{
     Vector2D    pos;
     Vector2D    dir;
     SDL_FRect   collide_rect;
+    Vector2D    center_pos;
 };
 
 class Level{
@@ -162,6 +162,7 @@ public:
         }
         
         calc_road_directions();
+        calc_tiles_directions(m_tiles);
     }
 
     std::pair<size_t, size_t> get_resolution() const { return {m_rows, m_columns}; }
@@ -196,6 +197,9 @@ public:
     bool is_occupied(const Vector2D& pos);
     bool is_decor_occupied(int row, int column) { return m_tiles[column + row * m_columns].decor_occupied; }
     bool is_decor_occupied(const Vector2D& pos);
+
+    RoadTileComponent get_nearest_road_tile(const Vector2D& pos);
+    void calc_tiles_directions(std::vector<TileComponent>& tiles);
 private:
     std::vector<std::string> m_tokens;
     size_t                   m_columns;   

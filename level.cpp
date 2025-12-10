@@ -125,6 +125,9 @@ Vector2D Level::get_dir(Vector2D pos){
 
             return road_tile.dir;
         }
+        else{
+            return tile.dir;
+        }
     }
     return {};
 }
@@ -153,7 +156,7 @@ bool Level::is_occupied(const Vector2D& pos){
     auto tile = get_tile(pos.get_sdl_point());
     if(tile.has_value())
         return tile.value().occupied;
-    SDL_Log("WARNING: pos (%d, %d) not in map", pos.x, pos.y);
+    SDL_Log("WARNING: pos (%f, %f) not in map", pos.x, pos.y);
     return true;
 }
 
@@ -161,6 +164,39 @@ bool Level::is_decor_occupied(const Vector2D& pos){
     auto tile = get_tile(pos.get_sdl_point());
     if(tile.has_value())
         return tile.value().decor_occupied;
-    SDL_Log("WARNING: pos (%d, %d) not in map", pos.x, pos.y);
+    SDL_Log("WARNING: pos (%f, %f) not in map", pos.x, pos.y);
     return true;
+}
+
+RoadTileComponent Level::get_nearest_road_tile(const Vector2D& pos){
+    auto tile = get_tile(pos.get_sdl_point());
+    if(tile.has_value()){
+        float length = MAXFLOAT;
+        int tile_index = -1;
+        for(int i = 0; i < m_road_tiles.size(); i++){
+            auto diff_length = (m_road_tiles[i].center_pos - pos).magnitude();
+            if(diff_length < length){
+                // SDL_Log("Row %d Column %d Length %f", m_road_tiles[i].row, m_road_tiles[i].column, diff_length);
+                tile_index = i;
+                length = diff_length;
+            }
+        }
+        if(tile_index > 0)
+            return m_road_tiles[tile_index];
+    }
+
+    return RoadTileComponent();
+}
+
+void Level::calc_tiles_directions(std::vector<TileComponent>& tiles){
+    for(auto it = tiles.begin(); it != tiles.end(); ++it){
+        if(is_road_tile(it->center_pos.get_sdl_point())) continue;
+
+        // SDL_Log("Tile %d %d", it->row, it->column);
+        auto road_tile = get_nearest_road_tile(it->center_pos);
+        auto dir = (road_tile.center_pos - it->center_pos).normalize();
+        it->dir = dir;
+        // SDL_Log("-----------------");
+    }
+    return;
 }

@@ -306,8 +306,6 @@ void Game::add_target(Entities& objects, const Vector2D& pos){
 
 }
 
-
-
 void Game::load_level_tiles(){
     //Tiles
     auto res = m_cur_level.get_resolution();
