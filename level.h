@@ -27,6 +27,7 @@ struct TileComponent{
     ,occupied(0)
     ,decor_occupied(0)
     ,collide_rect(rect)
+    ,center_pos(rect.x + rect.w / 2, rect.y + rect.h / 2)
     {}
 
     size_t      row;
@@ -36,6 +37,7 @@ struct TileComponent{
     int         occupied;
     int         decor_occupied;
     SDL_FRect   collide_rect;
+    Vector2D    center_pos;
 
     const static int grass_tile_int   = 0;
     const static int spawner_tile_int = 1;

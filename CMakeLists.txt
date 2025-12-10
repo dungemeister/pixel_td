@@ -11,6 +11,7 @@ set(SOURCES main.cpp
             game.cpp
             render_system.cpp
             level.cpp
+            spawn_system.cpp
 )
 
 find_package(SDL3 REQUIRED CONFIG REQUIRED COMPONENTS SDL3-shared)

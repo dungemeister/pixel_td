@@ -18,6 +18,7 @@ Game::Game()
     ,m_width(16 * 120)
     ,m_height(9 * 120)
     ,m_target()
+    ,m_spawn_system()
 {
     init();
 }
@@ -148,7 +149,9 @@ void Game::handle_mouse_event(Entities& objects, const SDL_MouseButtonEvent& mou
     }
     else if(mouse_event.button == SDL_BUTTON_RIGHT){
         if(m_cur_level.is_road_tile(mouse_pos)){
-            spawn_enemies_targeted(objects, m_target, mouse_pos);
+            auto id = objects.spawn_enemies_targeted(objects, m_cur_level, m_target, mouse_pos);
+            m_render_system->load_to_layer(objects.m_sprites[id]);
+
         }
     }
 }
@@ -182,6 +185,7 @@ void Game::handle_input(){
 
 void Game::update_game(float deltatime){
     // std::cout << deltatime <<"\n";
+    m_spawn_system.update(m_objects, m_cur_level, deltatime);
     m_move_system.update(m_objects, m_cur_level, deltatime);
     m_castle_damage_system.update(m_objects, m_cur_level, deltatime);
     m_enemy_collision_system.update(m_objects, m_cur_level, deltatime);
@@ -302,49 +306,7 @@ void Game::add_target(Entities& objects, const Vector2D& pos){
 
 }
 
-void Game::spawn_enemies_targeted(Entities& objects, const Vector2D& target, const SDL_FPoint& spawn_pos){
-    auto id = objects.add_object("enemy");
-    auto tile_size = m_cur_level.get_tile_size();
-    auto path = m_cur_level.get_road_tiles();
 
-    objects.m_positions[id].angle = 0;
-    objects.m_positions[id].x = spawn_pos.x;
-    objects.m_positions[id].y = spawn_pos.y;
-    objects.m_systems[id] |= ePositionSystem;
-
-    objects.m_sprites[id].posX = spawn_pos.x;
-    objects.m_sprites[id].posY = spawn_pos.y;
-    objects.m_sprites[id].width = tile_size.x;
-    objects.m_sprites[id].height = tile_size.y;
-    objects.m_sprites[id].scale = 0.5;
-    objects.m_sprites[id].colR = 0.6;
-    objects.m_sprites[id].colG = 0.6;
-    objects.m_sprites[id].colB = 0.6;
-    objects.m_sprites[id].angle = 0;
-    objects.m_sprites[id].flag = fCenterSprite;
-    objects.m_sprites[id].layer = SpriteLayer::ENTITY;
-    objects.m_sprites[id].type = EntityType::ENEMY;
-    objects.m_systems[id] |= eSpriteSystem;
-
-    objects.m_borders[id].x_min = 0;
-    objects.m_borders[id].x_max = 0;
-    // objects.m_borders[id].y_min = (tile.pos.y - tile_size.y) / 2;
-    objects.m_borders[id].y_min = (spawn_pos.y - tile_size.y / 4);
-    objects.m_borders[id].y_max = (spawn_pos.y + tile_size.y / 4);
-    // objects.m_flags[id] |= fEntityMapBorder;
-
-    // objects.m_moves[id].speed = RandomFloat(10., 20.);
-    objects.m_moves[id].speed = 10.f;
-    objects.m_moves[id].targeted = 1;
-    objects.m_moves[id].target = target;
-
-    // objects.m_moves[id].rotation_angle = RandomFloat(-1.f, 1.f);
-    objects.m_systems[id] |= eMoveSystem;
-
-    objects.m_types[id] = EntityType::ENEMY;
-
-    m_render_system->load_to_layer(objects.m_sprites[id]);
-}
 
 void Game::load_level_tiles(){
     //Tiles
@@ -532,7 +494,7 @@ void Game::load_decor_random_sprites(EntityType type, size_t size){
         sprite.posY = dst.y - (dst.h * height_shift);
         sprite.width = dst.w * (1 + width_shift);
         sprite.height = dst.h * (1 + height_shift);
-        sprite.scale = RandomFloat(1.f, 1.5f);
+        sprite.scale = RandomFloat(0.7f, 1.5f);
         sprite.colR = 0.6;
         sprite.colG = 0.6;
         sprite.colB = 0.6;

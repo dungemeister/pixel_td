@@ -7,6 +7,7 @@
 #include <iostream>
 #include <SDL3/SDL.h>
 #include "vector2d.h"
+#include "level.h"
 
 enum SpriteFlag{
     fUpperLeftSprite = 1 << 0,
@@ -149,6 +150,59 @@ struct Entities{
             m_borders.erase(m_borders.begin() + id);
             m_types.erase(m_types.begin() + id);
         }
+    }
+
+    EntityID spawn_enemies_targeted(Entities& objects, const Level& level, const Vector2D& target, const SDL_FPoint& spawn_pos){
+        auto id = objects.add_object("enemy");
+        auto tile_size = level.get_tile_size();
+        auto path      = level.get_road_tiles();
+
+        objects.m_positions[id].angle = 0;
+        objects.m_positions[id].x = spawn_pos.x;
+        objects.m_positions[id].y = spawn_pos.y;
+        objects.m_systems[id] |= ePositionSystem;
+
+        objects.m_sprites[id].posX = spawn_pos.x;
+        objects.m_sprites[id].posY = spawn_pos.y;
+        objects.m_sprites[id].width = tile_size.x;
+        objects.m_sprites[id].height = tile_size.y;
+        objects.m_sprites[id].scale = 0.5;
+        objects.m_sprites[id].colR = 0.6;
+        objects.m_sprites[id].colG = 0.6;
+        objects.m_sprites[id].colB = 0.6;
+        objects.m_sprites[id].angle = 0;
+        objects.m_sprites[id].flag = fCenterSprite;
+        objects.m_sprites[id].layer = SpriteLayer::ENTITY;
+        objects.m_sprites[id].type = EntityType::ENEMY;
+        objects.m_systems[id] |= eSpriteSystem;
+
+        objects.m_borders[id].x_min = 0;
+        objects.m_borders[id].x_max = 0;
+        // objects.m_borders[id].y_min = (tile.pos.y - tile_size.y) / 2;
+        objects.m_borders[id].y_min = (spawn_pos.y - tile_size.y / 4);
+        objects.m_borders[id].y_max = (spawn_pos.y + tile_size.y / 4);
+        // objects.m_flags[id] |= fEntityMapBorder;
+
+        // objects.m_moves[id].speed = RandomFloat(10., 20.);
+        objects.m_moves[id].speed = 10.f;
+        objects.m_moves[id].targeted = 1;
+        objects.m_moves[id].target = target;
+
+        // objects.m_moves[id].rotation_angle = RandomFloat(-1.f, 1.f);
+        objects.m_systems[id] |= eMoveSystem;
+
+        objects.m_types[id] = EntityType::ENEMY;
+
+        return id;
+    }
+
+    size_t get_objects_size(EntityType type){
+        size_t size = 0;
+        for(int i = 0 ; i < Entities::size(); i++){
+            if(m_types[i] == type)
+            size++;
+        }
+        return size;
     }
 };
 

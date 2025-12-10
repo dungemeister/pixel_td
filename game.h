@@ -8,6 +8,7 @@
 #include "castle_damage_system.h"
 #include "move_system.h"
 #include "enemy_collision_system.h"
+#include "spawn_system.h"
 
 class Game{
 public:
@@ -29,6 +30,7 @@ private:
     MoveSystem          m_move_system;
     CastleDamageSystem  m_castle_damage_system;
     EnemyCollistionSystem m_enemy_collision_system;
+    SpawnSystem         m_spawn_system;
     Entities            m_objects;
 
     std::vector<Level> m_levels;
