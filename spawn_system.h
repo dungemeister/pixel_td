@@ -11,8 +11,8 @@ struct SpawnSystem{
     void update(Entities& objects, const Level& level, float deltatime);
 
     float  m_spawn_interval;
-    size_t m_spawn_size;
+    int    m_spawn_size;
     float  m_spawn_timeout;
-    size_t m_max_enemies;
+    int    m_max_enemies;
 
 };

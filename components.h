@@ -9,6 +9,8 @@
 #include "vector2d.h"
 #include "level.h"
 
+typedef size_t EntityID;
+
 enum SpriteFlag{
     fUpperLeftSprite = 1 << 0,
     fCenterSprite    = 1 << 1,
@@ -21,6 +23,7 @@ enum SpriteLayer{
     BACKGROUND,
     DECORATION,
     ENTITY,
+    PROJECTILES,
 };
 
 struct PositionComponent{
@@ -28,13 +31,21 @@ struct PositionComponent{
     float angle;
 
     Vector2D get_vector2d() { return {x, y}; }
+    SDL_FPoint get_sdl_fpoint() { return {x, y}; }
+};
+
+struct VersionComponent{
+    size_t version;
+    bool operator==(const VersionComponent& other) { return other.version == version; }
 };
 
 struct MoveComponent{
     float speed;
     float rotation_angle;
-    Vector2D target;
     int targeted;
+    Vector2D target;
+    EntityID target_id;
+    VersionComponent target_version;
     void Initialize(float minSpeed, float maxSpeed)
     {
         // random angle
@@ -73,6 +84,9 @@ enum EntityType{
     FIRE_TOWER  ,
     ENEMY      ,
     TARGET     ,
+    //FIRING LAYER
+    PROJECTILE,
+    AOE,
     //EFFECTS LAYER
 };
 
@@ -85,6 +99,7 @@ enum EntitySystems{
     eMapBorderSystem         = 1 << 4,
     eSpriteBatchSystem       = 1 << 5,
     eSpriteAnimationSystem   = 1 << 6,
+    eFiringSystem            = 1 << 7,
 };
 
 struct SpriteComponent
@@ -117,31 +132,65 @@ struct AnimationComponent{
 
 };
 
-typedef size_t EntityID;
+enum FiringType{
+    eProjectile,
+    eAOE,
+    eIntantSpell,
+};
+
+struct FiringComponent{
+    float interval;
+    float cooldown;
+    float radius;
+    FiringType type;
+};
+
+struct HealthComponent{
+    float health;
+    int alive;
+};
+
+
 
 struct Entities{
+Entities() {
+    reserve(100);
+    m_empty_id = add_object("empty");
+    }
+    
+    EntityID m_empty_id;
+
     std::vector<std::string>        m_names;
     std::vector<PositionComponent>  m_positions;
     std::vector<MoveComponent>      m_moves;
     std::vector<SpriteComponent>    m_sprites;
     std::vector<BorderComponent>    m_borders;
     std::vector<AnimationComponent> m_animations;
+    std::vector<FiringComponent>    m_firings;
+    std::vector<HealthComponent>    m_health;
+    std::vector<VersionComponent>   m_versions;
     std::vector<EntitySystems_t>    m_systems;
     std::vector<EntityType>         m_types;
 
+    EntityID get_empty_id() { return m_empty_id; }
+
     void reserve(size_t n){
-        m_positions.reserve(n);
         m_names.reserve(n);
+        m_positions.reserve(n);
         m_moves.reserve(n);
         m_sprites.reserve(n);
-        m_systems.reserve(n);
         m_borders.reserve(n);
+        m_animations.reserve(n);
+        m_firings.reserve(n);
+        m_health.reserve(n);
+        m_versions.reserve(n);
+        m_systems.reserve(n);
         m_types.reserve(n);
+
     }
     size_t size() { return m_names.size(); }
 
     EntityID add_object(const std::string&& name){
-        
         EntityID id = m_names.size();
         m_names.emplace_back(name);
         m_positions.push_back(PositionComponent());
@@ -151,6 +200,9 @@ struct Entities{
         m_borders.push_back(BorderComponent());
         m_types.push_back(EntityType::UNDEFINED);
         m_animations.push_back(AnimationComponent());
+        m_firings.push_back(FiringComponent());
+        m_health.push_back(HealthComponent());
+        m_versions.push_back(VersionComponent());
         return id;
     }
     void remove_object(const std::string& name){
@@ -172,6 +224,12 @@ struct Entities{
             m_borders.erase(m_borders.begin() + id);
             m_types.erase(m_types.begin() + id);
             m_animations.erase(m_animations.begin() + id);
+            m_firings.erase(m_firings.begin() + id);
+            m_health.erase(m_health.begin() + id);
+            m_versions.erase(m_versions.begin() + id);
+            for(auto it = m_versions.begin() + id; it != m_versions.end(); ++it){
+                it->version++;
+            }
         }
     }
 
@@ -259,8 +317,14 @@ struct Entities{
             if(type == EntityType::FIRE_TOWER){
                 m_animations[id].cur_frame = 0.f;
                 m_animations[id].frames_size = 6;
-                m_animations[id].fps = 0.8;
-                m_systems[id] |= eSpriteAnimationSystem;
+                m_animations[id].fps = 1;
+
+                m_firings[id].interval = 2.f;
+                m_firings[id].cooldown = m_firings[id].interval;
+                m_firings[id].type = FiringType::eProjectile;
+                m_firings[id].radius = 150.f;
+
+                m_systems[id] |= eSpriteAnimationSystem | eFiringSystem;
             }
             m_types[id] = FIRE_TOWER;
 
@@ -269,6 +333,109 @@ struct Entities{
 
         }
         return -1;
+    }
+
+    EntityID get_nearest_enemy(const Vector2D& tower_pos, float radius){
+        float length = MAXFLOAT;
+        EntityID res = get_empty_id();
+        for(int id = 1, n = Entities::size(); id < n; id++){
+            
+            if(m_types[id] == EntityType::ENEMY){
+                auto diff = (m_positions[id].get_vector2d() - tower_pos).magnitude();
+                if(diff < length && diff < radius){
+                    length = diff;
+                    res = id;
+                }
+            }
+
+        }
+        return res;
+    }
+
+    EntityID get_nearest_enemy_to_point(const Vector2D& target){
+        float length = MAXFLOAT;
+        EntityID res = get_empty_id();
+        for(int id = 1, n = Entities::size(); id < n; id++){
+            
+            if(m_types[id] == EntityType::ENEMY){
+                auto diff = (m_positions[id].get_vector2d() - target).magnitude();
+                if(diff < length){
+                    length = diff;
+                    res = id;
+                }
+            }
+
+        }
+        return res;
+    }
+
+    std::vector<EntityID> get_enemies_in_radius(const Vector2D& pos, float radius){
+        std::vector<EntityID> res;
+        for(int id = 1, n = Entities::size(); id < n; id++){
+            
+            if(m_types[id] == EntityType::ENEMY){
+                auto diff = (m_positions[id].get_vector2d() - pos).magnitude();
+                if(diff <= radius){
+                    res.push_back(id);
+                }
+            }
+        }
+        return {get_empty_id()};
+    }
+
+    EntityID get_nearest_enemy_to_point_in_radius(const Vector2D& pos, const Vector2D& target, float radius){
+        float length = MAXFLOAT;
+        EntityID res = get_empty_id();
+        for(int id = 1, n = Entities::size(); id < n; id++){
+            
+            if(m_types[id] == EntityType::ENEMY){
+                auto diff = (m_positions[id].get_vector2d() - pos).magnitude();
+                if(diff <= radius){
+                    auto diff_to_target = (m_positions[id].get_vector2d() - target).magnitude();
+                    if(diff_to_target < length){
+                        length = diff;
+                        res = id;
+                    }
+                }
+            }
+
+        }
+        return res;
+    }
+    EntityID add_projectile(FiringType type, const SDL_FRect& rect, EntityID target_id){
+        auto id = add_object("projectile");
+
+        m_positions[id].x = rect.x;
+        m_positions[id].y = rect.y;
+        m_systems[id] |= ePositionSystem;
+
+        m_sprites[id].posX = rect.x;
+        m_sprites[id].posY = rect.y;
+        m_sprites[id].width = rect.w;
+        m_sprites[id].height = rect.h;
+        m_sprites[id].scale = 1.2;
+        m_sprites[id].colR = 0.6;
+        m_sprites[id].colG = 0.6;
+        m_sprites[id].colB = 0.6;
+        m_sprites[id].angle = 0;
+        m_sprites[id].flag = fCenterSprite;
+        m_sprites[id].layer = SpriteLayer::ENTITY;
+        m_sprites[id].type = EntityType::PROJECTILE;
+        m_sprites[id].anim_index = -1;
+        m_systems[id] |= eSpriteSystem;
+
+        m_moves[id].targeted = 1;
+        m_moves[id].target_id = target_id;
+        m_moves[id].target = m_positions[target_id].get_vector2d();
+        m_moves[id].target_version = m_versions[target_id];
+        m_moves[id].rotation_angle = (m_moves[id].target - Vector2D(rect.x, rect.y)).angle();
+        // SDL_Log("Proj angle %f", m_moves[id].rotation_angle);
+        m_moves[id].speed = 20.f;
+        m_systems[id] |= eMoveSystem;
+
+        m_types[id] = EntityType::PROJECTILE;
+
+        return id;
     }
 };
 

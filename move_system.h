@@ -9,7 +9,7 @@ public:
         for(int id = 0, n = objects.size(); id < n; id++){
             if((objects.m_systems[id] & eMoveSystem) == 0) continue;
             
-            if(objects.m_moves[id].targeted){
+            if(objects.m_moves[id].targeted && (objects.m_types[id] == EntityType::ENEMY)){
                 Vector2D pos = {objects.m_positions[id].x, objects.m_positions[id].y};
                 Vector2D diff = objects.m_moves[id].target - pos;
                 Vector2D force = CalculateLaneConstraintForce(level, pos);
@@ -45,8 +45,45 @@ public:
                 objects.m_sprites[id].posX = objects.m_positions[id].x;
                 objects.m_sprites[id].posY = objects.m_positions[id].y;
             }
-            else{
+            else if(objects.m_moves[id].targeted &&
+                   (objects.m_types[id] == EntityType::PROJECTILE)){
+                auto target_id = objects.m_moves[id].target_id;
+                if(objects.m_moves[id].target_version == objects.m_versions[target_id]){
+                    objects.m_moves[id].target = objects.m_positions[target_id].get_vector2d();
+                }
+                Vector2D pos = objects.m_positions[id].get_vector2d();
+                Vector2D diff = objects.m_moves[id].target - pos;
+                Vector2D force = {};
 
+                float distanceToTarget = diff.magnitude();
+
+                //Determine the distance to move this frame.
+                float distanceMove = objects.m_moves[id].speed * deltatime;
+                if (distanceMove > distanceToTarget)
+                    distanceMove = distanceToTarget;
+
+                //Find the normal from the flow field.
+                Vector2D directionNormal = diff.normalize();
+                Vector2D posAdd = directionNormal * distanceMove;
+
+
+                //Check if it needs to move in the x direction.  If so then check if the new x position, plus an amount of spacing 
+                //(to keep from moving too close to the wall) is within a wall or not and update the position as required.
+                // const float spacing = 0.35f;
+                // int x = (int)(pos.x + posAdd.x + copysign(spacing, posAdd.x));
+                // int y = (int)(pos.y);
+                pos.x += posAdd.x;
+
+                // //Do the same for the y direction.
+                // x = (int)(pos.x);
+                // y = (int)(pos.y + posAdd.y + copysign(spacing, posAdd.y));
+                // if (posAdd.y != 0.0f)
+                pos.y += posAdd.y;
+                
+                objects.m_positions[id].x = pos.x;
+                objects.m_positions[id].y = pos.y;
+                objects.m_sprites[id].posX = objects.m_positions[id].x;
+                objects.m_sprites[id].posY = objects.m_positions[id].y;
             }
         }
     }

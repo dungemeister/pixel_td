@@ -83,6 +83,10 @@ void Game::init_game(){
     register_type(EntityType::TILE,             {"assets/grass.png"});
     register_type(EntityType::ROAD,             {"assets/dirt_road.png"});
     register_type(EntityType::TOWER,            {"assets/tower.bmp"});
+    register_type(EntityType::SPAWNER,          {"assets/dirt_road.png",
+                                                 "assets/ground1.bmp"});
+    register_type(EntityType::CASTLE,           {"assets/dirt_road.png"});
+    
     register_type(EntityType::ICE_TOWER,        {"assets/ice_tower.png"});
     register_type(EntityType::FIRE_TOWER,       {"assets/fire/fire_tower1.png",
                                                  "assets/fire/fire_tower2.png",
@@ -91,9 +95,9 @@ void Game::init_game(){
                                                  "assets/fire/fire_tower5.png",
                                                  "assets/fire/fire_tower3.png"});
     register_type(EntityType::ENEMY,            {"assets/enemy.png"});
-    register_type(EntityType::SPAWNER,          {"assets/dirt_road.png",
-                                                 "assets/ground1.bmp"});
-    register_type(EntityType::CASTLE,           {"assets/dirt_road.png"});
+    
+    register_type(EntityType::PROJECTILE,       {"assets/fire/fireball.png"});
+
     register_type(EntityType::CASTLE_DECOR,     {"assets/statue.bmp"});
     register_type(EntityType::SPAWNER_DECOR,    {"assets/spawner.bmp"});
     register_type(EntityType::BUSH0_DECOR,      {"assets/bush0.bmp"});
@@ -204,9 +208,10 @@ void Game::handle_input(){
 void Game::update_game(float deltatime){
     // std::cout << deltatime <<"\n";
     m_spawn_system.update(m_objects, m_cur_level, deltatime);
+    m_firing_system.update(m_objects, m_cur_level, *m_render_system, deltatime);
     m_move_system.update(m_objects, m_cur_level, deltatime);
-    m_castle_damage_system.update(m_objects, m_cur_level, deltatime);
     m_enemy_collision_system.update(m_objects, m_cur_level, deltatime);
+    m_castle_damage_system.update(m_objects, m_cur_level, deltatime);
     m_animation_system.update(m_objects, deltatime);
 
     // m_render_system->clean_batch_frame();
@@ -492,6 +497,7 @@ void Game::load_decor_random_sprites(EntityType type, size_t size){
 void Game::load_towers(){
     auto id = m_objects.add_tower(m_cur_level, EntityType::ICE_TOWER, {761.657, 382.826});
     id = m_objects.add_tower(m_cur_level, EntityType::FIRE_TOWER, {942.076, 378.737});
+    id = m_objects.add_tower(m_cur_level, EntityType::FIRE_TOWER, {615.781, 267.516});
 }
 
 void Game::register_type(EntityType type, const std::vector<std::string>& textures){

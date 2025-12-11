@@ -5,8 +5,8 @@ void SpawnSystem::update(Entities& objects, const Level& level, float deltatime)
     if(m_spawn_timeout <= 0.){
         auto enemies_objects = objects.get_objects_size(EntityType::ENEMY);
         auto tile_size = level.get_tile_size();
-        size_t spawn_size = 0;
-        if(m_max_enemies - enemies_objects > m_spawn_size)
+        int spawn_size = 0;
+        if(m_max_enemies - static_cast<int>(enemies_objects) > m_spawn_size)
             spawn_size = m_spawn_size;
         else
             spawn_size = m_max_enemies - enemies_objects;
