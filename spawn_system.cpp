@@ -15,7 +15,7 @@ void SpawnSystem::update(Entities& objects, const Level& level, float deltatime)
             auto target = level.get_castle_tile().center_pos;
             auto spawn  = level.get_spawner_tile().center_pos;
             Vector2D random_pos = {spawn.x, RandomFloat(spawn.y - tile_size.y / 4, spawn.y + tile_size.y / 2)};
-            objects.spawn_enemies_targeted(objects, level, target, random_pos.get_sdl_point());
+            objects.spawn_enemies_targeted(level, target, random_pos.get_sdl_point());
 
         }
         m_spawn_timeout = m_spawn_interval;

@@ -48,11 +48,11 @@ private:
     void init_game();
     void resize_callback();
     void handle_mouse_event(Entities& objects, const SDL_MouseButtonEvent& mouse_event);
-    bool add_tower(Entities& objects, TowerType type, const TileComponent& tile);
     void add_target(Entities& objects, const Vector2D& pos);
-    void spawn_enemies_targeted(Entities& objects, const Vector2D& target, const SDL_FPoint& spawn_pos);
     void load_level_tiles();
     void load_decorations();
+    void load_towers();
     void load_decor_sprite(const Vector2D& pos, EntityType type);
     void load_decor_random_sprites(EntityType type, size_t size);
+    void register_type(EntityType type, const std::vector<std::string>& textures);
 };

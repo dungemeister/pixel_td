@@ -60,6 +60,8 @@ private:
     void add_sprite_vertices(SDL_Texture* texture, float x, float y, float w, float h);
     std::vector<SDL_Texture*> get_registered_type_textures(EntityType type);
     std::vector<std::string> get_registered_type_textures_pathes(EntityType type);
+    bool render_sprite_texture(const SpriteComponent& sprite, SDL_Texture* text);
+    size_t get_type_sprites_size(EntityType type);
 
     std::vector<std::pair<std::string, SDL_FRect>> m_brushes_src;
 };

@@ -142,82 +142,15 @@ SDL_Texture* RenderSystem::get_texture(std::string filepath){
 }
 
 bool RenderSystem::render_sprite(const SpriteComponent& sprite){
-    bool res = false;
+    bool res = true;
     auto textures = get_registered_type_textures(sprite.type);
     auto textures_pathes = get_registered_type_textures_pathes(sprite.type);
-    for(const auto& text: textures){
-
-        // SDL_Texture* text = get_texture(textpath);
-        // float w, h;
-        // SDL_GetTextureSize(text, &w, &h);
-        SDL_FRect dest_rect = {sprite.posX,
-                               sprite.posY,
-                               sprite.width * sprite.scale,
-                               sprite.height * sprite.scale};
-        if(sprite.flag == fCenterSprite){
-
-            //Shift sprite to the center of position
-            dest_rect.x -= dest_rect.w / 2;
-            dest_rect.y -= dest_rect.h / 2;
-        }
-        SDL_FPoint center = {dest_rect.w / 2, dest_rect.h / 2};
-        float angle = sprite.angle;
-        SDL_FlipMode mode = SDL_FLIP_NONE;
-        res = SDL_RenderTextureRotated(m_renderer, text, nullptr, &dest_rect, angle, &center, mode);
-        // res = SDL_RenderTexture(m_renderer, text, nullptr, &dest_rect);
-        // SDL_FPoint center = {sprite.posX, sprite.posY};
-        // SDL_RenderTextureRotated(m_renderer, text, nullptr, &dest_rect, 90.f, &center, SDL_FLIP_VERTICAL);
-        // if(sprite.layer == SpriteLayer::DECORATION){
-            
-        //     SDL_FRect bush_dest = {sprite.posX,
-        //                            sprite.posY,
-        //                            sprite.width * 0.5f,
-        //                            sprite.height * 0.5f};
-        //     auto bush_text = get_texture("assets/bush_tiles.bmp");
-        //     auto src = m_brushes_src[static_cast<int>(sprite.posX) % 40].second;
-        //     res = SDL_RenderTextureRotated(m_renderer, bush_text, &src, &bush_dest, angle, &center, mode);
-        // }
-        if(sprite.flag & fSpriteBorder){
-            SDL_Surface* surface = SDL_CreateSurface(dest_rect.w, dest_rect.h, SDL_PIXELFORMAT_RGBA32);
-            if (!surface) {
-                printf("Failed to create surface: %s\n", SDL_GetError());
-                return false;
-            }
-            
-            // Заполняем поверхность прозрачным цветом
-            SDL_FillSurfaceRect(surface, NULL, 0x0);
-        
-            // Рисуем контур прямоугольника
-            int border_thickness = 1.f;
-            SDL_Rect outer_rect = {0, 0, static_cast<int>(dest_rect.w), static_cast<int>(dest_rect.h)};
-            SDL_Rect inner_rect = {
-                border_thickness, 
-                border_thickness, 
-                static_cast<int>(dest_rect.w) - 2 * border_thickness, 
-                static_cast<int>(dest_rect.h) - 2 * border_thickness
-            };
-
-
-            // Заполняем весь прямоугольник цветом
-            SDL_FillSurfaceRect(surface, &outer_rect, SDL_MapRGBA(SDL_GetPixelFormatDetails(surface->format), nullptr, 0xFF, 0, 0, 0xFF));
-            // Вырезаем внутреннюю часть чтобы получить контур
-            SDL_FillSurfaceRect(surface, &inner_rect, SDL_MapRGBA(SDL_GetPixelFormatDetails(surface->format), nullptr, 0, 0, 0, 0));
-            SDL_Texture* border_text = SDL_CreateTextureFromSurface(m_renderer, surface);
-            res = SDL_RenderTextureRotated(m_renderer, border_text, nullptr, &dest_rect, angle, &center, SDL_FLIP_HORIZONTAL);
-            
-            SDL_DestroySurface(surface);
-            SDL_DestroyTexture(border_text);
-
-            // SDL_Surface* border_surface = SDL_CreateSurface(dest_rect.w, dest_rect.h, SDL_PIXELFORMAT_RGBA32);
-            // SDL_SetRenderDrawColor(m_renderer, 0xFF, 0x00, 0x00, 0xFF);
-            // res = SDL_RenderRect(m_renderer, &dest_rect);
-            // SDL_Color circle_color = {0x80, 0x00, 0x80, 0xFF};
-            // res = Circle::render_circle(m_renderer,
-            //                       dest_rect.x + dest_rect.w / 2,
-            //                       dest_rect.y + dest_rect.h / 2,
-            //                       SDL_sqrtf(dest_rect.w * dest_rect.w + dest_rect.h * dest_rect.h),
-            //                       circle_color);
-            // res = SDL_RenderTextureTiled(m_renderer, text, &r, scale, NULL);
+    if(sprite.anim_index != -1){
+        res &= render_sprite_texture(sprite, textures[sprite.anim_index]);
+    }
+    else {
+        for(const auto& text: textures){
+            res &= render_sprite_texture(sprite, text);
         }
     }
     return res;
@@ -332,6 +265,7 @@ void RenderSystem::register_type_sprite(EntityType type, const std::vector<std::
     m_registered_textures.insert({type, type_textures});
 
 }
+
 std::vector<SDL_Texture*> RenderSystem::get_registered_type_textures(EntityType type){
     auto it = m_registered_textures.find(type);
     if(it != m_registered_textures.end()){
@@ -348,4 +282,76 @@ std::vector<std::string> RenderSystem::get_registered_type_textures_pathes(Entit
     }
     SDL_Log("WARNING: fail to get registered type %d textures pathes", type);
     return {};
+}
+
+bool RenderSystem::render_sprite_texture(const SpriteComponent& sprite, SDL_Texture* text){
+    bool res = false;
+    SDL_FRect dest_rect = {sprite.posX,
+                        sprite.posY,
+                        sprite.width * sprite.scale,
+                        sprite.height * sprite.scale};
+    if(sprite.flag == fCenterSprite){
+
+        //Shift sprite to the center of position
+        dest_rect.x -= dest_rect.w / 2;
+        dest_rect.y -= dest_rect.h / 2;
+    }
+    SDL_FPoint center = {dest_rect.w / 2, dest_rect.h / 2};
+    float angle = sprite.angle;
+    SDL_FlipMode mode = SDL_FLIP_NONE;
+    res = SDL_RenderTextureRotated(m_renderer, text, nullptr, &dest_rect, angle, &center, mode);
+
+    if(sprite.flag & fSpriteBorder){
+        SDL_Surface* surface = SDL_CreateSurface(dest_rect.w, dest_rect.h, SDL_PIXELFORMAT_RGBA32);
+        if (!surface) {
+            printf("Failed to create surface: %s\n", SDL_GetError());
+            return false;
+        }
+        
+        // Заполняем поверхность прозрачным цветом
+        SDL_FillSurfaceRect(surface, NULL, 0x0);
+    
+        // Рисуем контур прямоугольника
+        int border_thickness = 1.f;
+        SDL_Rect outer_rect = {0, 0, static_cast<int>(dest_rect.w), static_cast<int>(dest_rect.h)};
+        SDL_Rect inner_rect = {
+            border_thickness, 
+            border_thickness, 
+            static_cast<int>(dest_rect.w) - 2 * border_thickness, 
+            static_cast<int>(dest_rect.h) - 2 * border_thickness
+        };
+
+
+        // Заполняем весь прямоугольник цветом
+        SDL_FillSurfaceRect(surface, &outer_rect, SDL_MapRGBA(SDL_GetPixelFormatDetails(surface->format), nullptr, 0xFF, 0, 0, 0xFF));
+        // Вырезаем внутреннюю часть чтобы получить контур
+        SDL_FillSurfaceRect(surface, &inner_rect, SDL_MapRGBA(SDL_GetPixelFormatDetails(surface->format), nullptr, 0, 0, 0, 0));
+        SDL_Texture* border_text = SDL_CreateTextureFromSurface(m_renderer, surface);
+        res = SDL_RenderTextureRotated(m_renderer, border_text, nullptr, &dest_rect, angle, &center, SDL_FLIP_HORIZONTAL);
+        
+        SDL_DestroySurface(surface);
+        SDL_DestroyTexture(border_text);
+
+        // SDL_Surface* border_surface = SDL_CreateSurface(dest_rect.w, dest_rect.h, SDL_PIXELFORMAT_RGBA32);
+        // SDL_SetRenderDrawColor(m_renderer, 0xFF, 0x00, 0x00, 0xFF);
+        // res = SDL_RenderRect(m_renderer, &dest_rect);
+        // SDL_Color circle_color = {0x80, 0x00, 0x80, 0xFF};
+        // res = Circle::render_circle(m_renderer,
+        //                       dest_rect.x + dest_rect.w / 2,
+        //                       dest_rect.y + dest_rect.h / 2,
+        //                       SDL_sqrtf(dest_rect.w * dest_rect.w + dest_rect.h * dest_rect.h),
+        //                       circle_color);
+        // res = SDL_RenderTextureTiled(m_renderer, text, &r, scale, NULL);
+    }
+    return res;
+}
+
+size_t RenderSystem::get_type_sprites_size(EntityType type){
+    size_t size = 0;
+    auto it = m_registered_textures.find(type);
+    if(it != m_registered_textures.end()){
+        return it->second.size();
+    }
+    SDL_Log("WARNING: fail to get registered type %d textures", type);
+    return size;
 }
