@@ -18,7 +18,7 @@ public:
     void destroy_game();
     void loop();
     void handle_input();
-    void update_game(float deltatime);
+    void update_game();
     void draw_output();
 
 private:
@@ -37,6 +37,8 @@ private:
 
     std::vector<Level> m_levels;
     Level              m_cur_level;
+
+    Uint64 m_current_ticks;
 
     int m_running;
     int m_width;

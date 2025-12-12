@@ -19,6 +19,7 @@ Game::Game()
     ,m_height(9 * 120)
     ,m_target()
     ,m_spawn_system()
+    ,m_current_ticks(0)
 {
     init();
 }
@@ -116,21 +117,20 @@ void Game::destroy_game(){
 void Game::loop(){
     Uint64 lastTime = SDL_GetTicks();
     int frames = 0;
-    Uint64 interval = 100; // 1 секунда в мс
+    Uint64 interval = 500; // 1 секунда в мс
     while(m_running){
-        Uint64 currentTime = SDL_GetTicks();
+        Uint64 frame_ticks = SDL_GetTicks();
         frames++;
-
-        if (currentTime - lastTime >= interval) {
-            fps = static_cast<float>(frames) / (currentTime - lastTime) * 1000.0f;
-            lastTime = currentTime;
+        if (frame_ticks - lastTime >= interval) {
+            fps = static_cast<float>(frames) / (frame_ticks - lastTime) * 1000.0f;
+            lastTime = frame_ticks;
             frames = 0;
         }
 
         handle_input();
-        update_game(std::min(static_cast<float>(currentTime - lastTime) / 1000, 0.05f));
+        update_game();
         draw_output();
-        int sleep = 8 - (SDL_GetTicks() - currentTime);
+        int sleep = 8 - (SDL_GetTicks() - frame_ticks);
         if(sleep > 0){
             SDL_Delay(sleep); // Ограничивает ~120 FPS
         }
@@ -205,8 +205,10 @@ void Game::handle_input(){
     }
 }
 
-void Game::update_game(float deltatime){
-    // std::cout << deltatime <<"\n";
+void Game::update_game(){
+    float deltatime = std::min(static_cast<float>(SDL_GetTicks() - m_current_ticks) / 1000, 0.008f);
+    m_current_ticks = SDL_GetTicks();
+    std::cout << deltatime <<"\n";
     m_spawn_system.update(m_objects, m_cur_level, deltatime);
     m_firing_system.update(m_objects, m_cur_level, *m_render_system, deltatime);
     m_move_system.update(m_objects, m_cur_level, deltatime);
