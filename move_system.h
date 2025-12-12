@@ -47,8 +47,12 @@ public:
             }
             else if(objects.m_moves[id].targeted &&
                    (objects.m_types[id] == EntityType::PROJECTILE)){
+
                 auto target_id = objects.m_moves[id].target_id;
-                if(objects.m_moves[id].target_version == objects.m_versions[target_id]){
+                //Update target position if target still alive
+                if(objects.is_alive(target_id) &&
+                   objects.m_moves[id].target_version == objects.m_versions[target_id]){
+
                     objects.m_moves[id].target = objects.m_positions[target_id].get_vector2d();
                 }
                 Vector2D pos = objects.m_positions[id].get_vector2d();

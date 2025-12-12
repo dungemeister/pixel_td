@@ -6,6 +6,7 @@
 #include <algorithm>
 #include <iostream>
 #include <SDL3/SDL.h>
+#include <unordered_map>
 #include "vector2d.h"
 #include "level.h"
 
@@ -191,6 +192,21 @@ Entities() {
     size_t size() { return m_names.size(); }
 
     EntityID add_object(const std::string&& name){
+        SDL_Log("Added %s", name.c_str());
+        for(int id = 0, n = m_names.size(); id < n; id++)
+        {
+            if(m_health[id].alive) continue;
+
+            reset_object(id);
+            m_health[id].alive = 1;
+            m_names[id] = name;
+            return id;
+
+        }
+        return add_new_object(name);
+    }
+
+    EntityID add_new_object(const std::string& name){
         EntityID id = m_names.size();
         m_names.emplace_back(name);
         m_positions.push_back(PositionComponent());
@@ -203,8 +219,26 @@ Entities() {
         m_firings.push_back(FiringComponent());
         m_health.push_back(HealthComponent());
         m_versions.push_back(VersionComponent());
+
+        m_health.back().alive = 1;
         return id;
     }
+
+    void reset_object(EntityID id){
+        // SDL_Log("Reseted Name: %s ID: %lu, Type: %d, Version: %d", m_names[id].c_str(), id, m_types[id], m_versions[id]);
+        m_names[id].clear();
+        m_positions[id] = PositionComponent();
+        m_moves[id] = MoveComponent();
+        m_sprites[id] = SpriteComponent();
+        m_systems[id] = EntitySystems::eDummySystem;
+        m_borders[id] = BorderComponent();
+        m_types[id] = EntityType::UNDEFINED;
+        m_animations[id] = AnimationComponent();
+        m_firings[id] = FiringComponent();
+        m_health[id].alive = 0;
+        m_versions[id].version += 1;
+    }
+
     void remove_object(const std::string& name){
         auto it = std::find(m_names.begin(), m_names.end(), name);
         if(it != m_names.end()){
@@ -212,6 +246,14 @@ Entities() {
             std::cout << "Found '" << name << "' at ID " << id << std::endl;
             remove_object(id);
         }
+    }
+
+    bool is_alive(EntityID id){
+        return m_health[id].alive == 1;
+    }
+
+    VersionComponent get_version_component(EntityID id){
+        return m_versions[id];
     }
 
     void remove_object(int id){
@@ -231,6 +273,10 @@ Entities() {
                 it->version++;
             }
         }
+    }
+
+    void set_object_alive_state(EntityID id, int state){
+        m_health[id].alive = state;
     }
 
     EntityID spawn_enemies_targeted(const Level& level, const Vector2D& target, const SDL_FPoint& spawn_pos){
@@ -266,10 +312,10 @@ Entities() {
         // objects.m_flags[id] |= fEntityMapBorder;
 
         // objects.m_moves[id].speed = RandomFloat(10., 20.);
-        m_moves[id].speed = 10.f;
+        m_moves[id].speed = 100.f;
         m_moves[id].targeted = 1;
         m_moves[id].target = target;
-
+        
         // objects.m_moves[id].rotation_angle = RandomFloat(-1.f, 1.f);
         m_systems[id] |= eMoveSystem;
 
@@ -317,9 +363,9 @@ Entities() {
             if(type == EntityType::FIRE_TOWER){
                 m_animations[id].cur_frame = 0.f;
                 m_animations[id].frames_size = 6;
-                m_animations[id].fps = 1;
+                m_animations[id].fps = 8;
 
-                m_firings[id].interval = 2.f;
+                m_firings[id].interval = 1.f;
                 m_firings[id].cooldown = m_firings[id].interval;
                 m_firings[id].type = FiringType::eProjectile;
                 m_firings[id].radius = 150.f;
@@ -386,20 +432,26 @@ Entities() {
     EntityID get_nearest_enemy_to_point_in_radius(const Vector2D& pos, const Vector2D& target, float radius){
         float length = MAXFLOAT;
         EntityID res = get_empty_id();
+        float diff_to_target = 0.f;
+        std::unordered_map<EntityID, float> targets_in_radius;
+        targets_in_radius.reserve(32);
+
         for(int id = 1, n = Entities::size(); id < n; id++){
             
             if(m_types[id] == EntityType::ENEMY){
-                auto diff = (m_positions[id].get_vector2d() - pos).magnitude();
-                if(diff <= radius){
-                    auto diff_to_target = (m_positions[id].get_vector2d() - target).magnitude();
+                auto diff_radius = (m_positions[id].get_vector2d() - pos).magnitude();
+                if(diff_radius <= radius){
+                    diff_to_target = (m_positions[id].get_vector2d() - target).magnitude();
+                    targets_in_radius.emplace(id, diff_to_target);
                     if(diff_to_target < length){
-                        length = diff;
+                        length = diff_to_target;
                         res = id;
                     }
                 }
             }
 
         }
+
         return res;
     }
     EntityID add_projectile(FiringType type, const SDL_FRect& rect, EntityID target_id){
@@ -430,7 +482,7 @@ Entities() {
         m_moves[id].target_version = m_versions[target_id];
         m_moves[id].rotation_angle = (m_moves[id].target - Vector2D(rect.x, rect.y)).angle();
         // SDL_Log("Proj angle %f", m_moves[id].rotation_angle);
-        m_moves[id].speed = 20.f;
+        m_moves[id].speed = 200.f;
         m_systems[id] |= eMoveSystem;
 
         m_types[id] = EntityType::PROJECTILE;

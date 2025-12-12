@@ -208,7 +208,7 @@ void Game::handle_input(){
 void Game::update_game(){
     float deltatime = std::min(static_cast<float>(SDL_GetTicks() - m_current_ticks) / 1000, 0.008f);
     m_current_ticks = SDL_GetTicks();
-    std::cout << deltatime <<"\n";
+    // std::cout << deltatime <<"\n";
     m_spawn_system.update(m_objects, m_cur_level, deltatime);
     m_firing_system.update(m_objects, m_cur_level, *m_render_system, deltatime);
     m_move_system.update(m_objects, m_cur_level, deltatime);

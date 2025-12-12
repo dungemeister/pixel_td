@@ -3,8 +3,8 @@
 
 struct SpawnSystem{
     SpawnSystem()
-    :m_spawn_interval(5.f)
-    ,m_spawn_size(4)
+    :m_spawn_interval(0.5f)
+    ,m_spawn_size(1)
     ,m_spawn_timeout(2.5f)
     ,m_max_enemies(100)
     {}

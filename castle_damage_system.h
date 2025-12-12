@@ -11,18 +11,24 @@ public:
                 Vector2D pos = objects.m_positions[id].get_vector2d();
                 if(level.is_pos_in_castle(pos)){
                     std::cout << "Enemy " << id << " damaged castle" << std::endl;
-                    objects.remove_object(id);
+                    objects.reset_object(id);
                 }
             }
             else if(objects.m_types[id] == EntityType::PROJECTILE){
                 Vector2D pos = objects.m_positions[id].get_vector2d();
                 Vector2D target = objects.m_moves[id].target;
                 auto diff = target - pos;
-                if(diff.magnitude() <= 0.01f){
-                    auto enemy_id = objects.m_moves[id].target_id;
-                    SDL_Log("Enemy %lu damaged", enemy_id);
-                    objects.remove_object(id);
-                    objects.remove_object(enemy_id);
+                auto enemy_id = objects.m_moves[id].target_id;
+                if(diff.magnitude() <= 0.1f){
+                    // objects.update_other_projectiles(id);
+                    if(objects.m_types[enemy_id] == EntityType::ENEMY &&
+                       objects.is_alive(enemy_id) &&
+                       objects.get_version_component(enemy_id).version == objects.m_moves[id].target_version.version){
+
+                            objects.reset_object(enemy_id);
+                       }
+                    
+                    objects.reset_object(id);
                 }
             }
             

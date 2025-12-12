@@ -11,7 +11,6 @@ void SpawnSystem::update(Entities& objects, const Level& level, float deltatime)
         else
             spawn_size = m_max_enemies - enemies_objects;
         for(int i = 0; i < spawn_size; i++){
-            auto id = objects.add_object("enemy");
             auto target = level.get_castle_tile().center_pos;
             auto spawn  = level.get_spawner_tile().center_pos;
             Vector2D random_pos = {spawn.x, RandomFloat(spawn.y - tile_size.y / 4, spawn.y + tile_size.y / 2)};

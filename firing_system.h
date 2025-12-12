@@ -36,10 +36,14 @@ struct FiringSystem{
                                                              rect,
                                                              enemy_id);
                             render_system.load_to_layer(objects.m_sprites[id]);
+                            firing_comp.cooldown = firing_comp.interval;
+                        }
+                        else{
+                            firing_comp.cooldown = 0;
                         }
                     break;
                 }
-                firing_comp.cooldown = firing_comp.interval;
+                
             }
         }
     }
