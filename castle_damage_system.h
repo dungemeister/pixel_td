@@ -13,7 +13,7 @@ public:
                     std::cout << "Enemy " << id << " damaged castle" << std::endl;
                     objects.reset_object(id);
 
-                    EntityID hearth_id = objects.get_object(EntityType::HEARTH);
+                    EntityID hearth_id = objects.get_object(SpriteType::HEARTH);
                     objects.m_sprites[hearth_id].anim_index = (objects.m_sprites[hearth_id].anim_index + 1) % 2;
                 }
             }

@@ -10,18 +10,28 @@ void RenderSystem::render(const Entities& objects){
     for(auto& sprite: objects.m_sprites){
         load_to_layer(sprite);
     }
+
     for(auto& sprite_data: m_background_sprites){
         if(!render_sprite(sprite_data)){
             SDL_Log("render background sprite: %s", SDL_GetError());
         }
     }
-    
     for(auto& sprite_data: m_decoration_sprites){
         if(!render_sprite(sprite_data)){
             SDL_Log("render decoration sprite: %s", SDL_GetError());
         }
     }
     for(auto& sprite_data: m_entity_sprites){
+        if(!render_sprite(sprite_data)){
+            SDL_Log("render entity sprite: %s", SDL_GetError());
+        }
+    }
+    for(auto& sprite_data: m_proj_sprites){
+        if(!render_sprite(sprite_data)){
+            SDL_Log("render entity sprite: %s", SDL_GetError());
+        }
+    }
+    for(auto& sprite_data: m_hud_sprites){
         if(!render_sprite(sprite_data)){
             SDL_Log("render entity sprite: %s", SDL_GetError());
         }
@@ -234,6 +244,8 @@ void RenderSystem::clean_frame(){
     m_background_sprites.clear();
     m_decoration_sprites.clear();
     m_entity_sprites.clear();
+    m_proj_sprites.clear();
+    m_hud_sprites.clear();
 }
 
 void RenderSystem::load_to_layer(const SpriteComponent& sprite){
@@ -248,10 +260,16 @@ void RenderSystem::load_to_layer(const SpriteComponent& sprite){
         case SpriteLayer::ENTITY:
             m_entity_sprites.emplace_back(sprite);
         break;
+        case SpriteLayer::PROJECTILES:
+            m_proj_sprites.emplace_back(sprite);
+        break;
+        case SpriteLayer::HUD:
+            m_hud_sprites.emplace_back(sprite);
+        break;
     }
 }
 
-void RenderSystem::register_type_sprite(EntityType type, const std::vector<std::string>& pathes){
+void RenderSystem::register_type_sprite(SpriteType type, const std::vector<std::string>& pathes){
     std::vector<SDL_Texture*> type_textures;
     for(const auto& texturepath: pathes){
         auto text = get_texture(texturepath);
@@ -266,7 +284,7 @@ void RenderSystem::register_type_sprite(EntityType type, const std::vector<std::
 
 }
 
-std::vector<SDL_Texture*> RenderSystem::get_registered_type_textures(EntityType type){
+std::vector<SDL_Texture*> RenderSystem::get_registered_type_textures(SpriteType type){
     auto it = m_registered_textures.find(type);
     if(it != m_registered_textures.end()){
         return it->second;
@@ -275,7 +293,7 @@ std::vector<SDL_Texture*> RenderSystem::get_registered_type_textures(EntityType 
     return {};
 }
 
-std::vector<std::string> RenderSystem::get_registered_type_textures_pathes(EntityType type){
+std::vector<std::string> RenderSystem::get_registered_type_textures_pathes(SpriteType type){
     auto it = m_registered_types.find(type);
     if(it != m_registered_types.end()){
         return it->second;
@@ -346,7 +364,7 @@ bool RenderSystem::render_sprite_texture(const SpriteComponent& sprite, SDL_Text
     return res;
 }
 
-size_t RenderSystem::get_type_sprites_size(EntityType type){
+size_t RenderSystem::get_type_sprites_size(SpriteType type){
     size_t size = 0;
     auto it = m_registered_textures.find(type);
     if(it != m_registered_textures.end()){

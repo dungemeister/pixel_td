@@ -25,6 +25,7 @@ enum SpriteLayer{
     DECORATION,
     ENTITY,
     PROJECTILES,
+    HUD,
 };
 
 struct PositionComponent{
@@ -73,9 +74,10 @@ enum EntityGlobalType{
     ENEMY_ENTITY,
     FRIEND_ENTITY,
     PROJECTILE_ENTITY,
+    HUD_ENTITY,
 };
 
-enum EntityType{
+enum SpriteType{
     UNDEFINED  = 0,
     //BACKGROUND LAYER
     TILE       ,
@@ -103,6 +105,8 @@ enum EntityType{
     PROJECTILE,
     AOE,
     //EFFECTS LAYER
+    HEALTH_BAR,
+    //HUD
     HEARTH,
 };
 
@@ -127,7 +131,7 @@ struct SpriteComponent
     float angle;
     int flag;
     SpriteLayer layer;
-    EntityType  type;
+    SpriteType  type;
     int anim_index;
 };
 
@@ -294,7 +298,7 @@ Entities() {
         m_health[id].alive = state;
     }
 
-    EntityID spawn_enemies_targeted(const Level& level, const Vector2D& target, const SDL_FPoint& spawn_pos, EntityType type){
+    EntityID spawn_enemies_targeted(const Level& level, const Vector2D& target, const SDL_FPoint& spawn_pos, SpriteType type){
         auto id = add_object("enemy");
         auto tile_size = level.get_tile_size();
         auto path      = level.get_road_tiles();
@@ -318,17 +322,17 @@ Entities() {
         m_sprites[id].anim_index = -1;
         m_systems[id] |= eSpriteSystem;
         switch(type){
-            case EntityType::VIKING:
-            case EntityType::BEE:
+            case SpriteType::VIKING:
+            case SpriteType::BEE:
                 m_sprites[id].scale = 0.5;
             break;
-            case EntityType::DRAGONIT:
+            case SpriteType::DRAGONIT:
                 m_sprites[id].scale = 0.7;
             break;
-            case EntityType::SERJANT:
+            case SpriteType::SERJANT:
                 m_sprites[id].scale = 0.9;
             break;
-            case EntityType::TANK:
+            case SpriteType::TANK:
                 m_sprites[id].scale = 1.1;
             break;
             default:
@@ -364,7 +368,7 @@ Entities() {
         return size;
     }
     
-    EntityID add_tower(Level& level, EntityType type, const Vector2D& pos){
+    EntityID add_tower(Level& level, SpriteType type, const Vector2D& pos){
         auto tile_opt = level.get_tile(pos.get_sdl_point());
         if(!level.is_road_tile(pos.get_sdl_point()) && tile_opt.has_value())
         {
@@ -391,7 +395,7 @@ Entities() {
             m_sprites[id].anim_index = -1;
             m_systems[id] |= eSpriteSystem;
 
-            if(type == EntityType::FIRE_TOWER){
+            if(type == SpriteType::FIRE_TOWER){
                 m_animations[id].cur_frame = 0.f;
                 m_animations[id].frames_size = 6;
                 m_animations[id].fps = 8;
@@ -502,8 +506,8 @@ Entities() {
         m_sprites[id].colB = 0.6;
         m_sprites[id].angle = 0;
         m_sprites[id].flag = fCenterSprite;
-        m_sprites[id].layer = SpriteLayer::ENTITY;
-        m_sprites[id].type = EntityType::PROJECTILE;
+        m_sprites[id].layer = SpriteLayer::PROJECTILES;
+        m_sprites[id].type = SpriteType::PROJECTILE;
         m_sprites[id].anim_index = -1;
         m_systems[id] |= eSpriteSystem;
 
@@ -521,7 +525,7 @@ Entities() {
         return id;
     }
 
-    EntityID get_object(EntityType type){
+    EntityID get_object(SpriteType type){
         for(int id = get_empty_id() + 1, n = Entities::size(); id < n; id++){
             
             if(m_sprites[id].type == type){

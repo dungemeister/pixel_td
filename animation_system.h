@@ -22,11 +22,11 @@ struct AnimationSystem{
 
     }
 
-    void register_type(EntityType type, size_t textures_size){
+    void register_type(SpriteType type, size_t textures_size){
         m_registered_types.emplace(type, textures_size);
     }
-    void unregister_type(EntityType type){
+    void unregister_type(SpriteType type){
         m_registered_types.erase(type);
     }
-    std::unordered_map<EntityType, size_t> m_registered_types;
+    std::unordered_map<SpriteType, size_t> m_registered_types;
 };

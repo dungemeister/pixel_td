@@ -80,36 +80,36 @@ void Game::init_game(){
     m_objects.reserve(256);
 
     //Register entities types
-    register_type(EntityType::UNDEFINED,{"assets/quot_stickers.png"});
-    register_type(EntityType::TILE,             {"assets/grass.png"});
-    register_type(EntityType::ROAD,             {"assets/dirt_road.png"});
-    register_type(EntityType::TOWER,            {"assets/tower.bmp"});
-    register_type(EntityType::SPAWNER,          {"assets/dirt_road.png",
+    register_type(SpriteType::UNDEFINED,{"assets/quot_stickers.png"});
+    register_type(SpriteType::TILE,             {"assets/grass.png"});
+    register_type(SpriteType::ROAD,             {"assets/dirt_road.png"});
+    register_type(SpriteType::TOWER,            {"assets/tower.bmp"});
+    register_type(SpriteType::SPAWNER,          {"assets/dirt_road.png",
                                                  "assets/ground1.bmp"});
-    register_type(EntityType::CASTLE,           {"assets/dirt_road.png"});
+    register_type(SpriteType::CASTLE,           {"assets/dirt_road.png"});
     
-    register_type(EntityType::ICE_TOWER,        {"assets/ice_tower.png"});
-    register_type(EntityType::FIRE_TOWER,       {"assets/fire/fire_tower1.png",
+    register_type(SpriteType::ICE_TOWER,        {"assets/ice_tower.png"});
+    register_type(SpriteType::FIRE_TOWER,       {"assets/fire/fire_tower1.png",
                                                  "assets/fire/fire_tower2.png",
                                                  "assets/fire/fire_tower3.png",
                                                  "assets/fire/fire_tower4.png",
                                                  "assets/fire/fire_tower5.png",
                                                  "assets/fire/fire_tower3.png"});
-    register_type(EntityType::VIKING,            {"assets/enemies/viking.png"});
-    register_type(EntityType::DRAGONIT,          {"assets/enemies/dragonit.png"});
-    register_type(EntityType::BEE,               {"assets/enemies/bee.png"});
-    register_type(EntityType::SERJANT,           {"assets/enemies/serjant.png"});
-    register_type(EntityType::TANK,              {"assets/enemies/tank.png"});
+    register_type(SpriteType::VIKING,            {"assets/enemies/viking.png"});
+    register_type(SpriteType::DRAGONIT,          {"assets/enemies/dragonit.png"});
+    register_type(SpriteType::BEE,               {"assets/enemies/bee.png"});
+    register_type(SpriteType::SERJANT,           {"assets/enemies/serjant.png"});
+    register_type(SpriteType::TANK,              {"assets/enemies/tank.png"});
     
-    register_type(EntityType::PROJECTILE,       {"assets/fire/fireball.png"});
+    register_type(SpriteType::PROJECTILE,       {"assets/fire/fireball.png"});
 
-    register_type(EntityType::CASTLE_DECOR,     {"assets/statue.bmp"});
-    register_type(EntityType::SPAWNER_DECOR,    {"assets/spawner.bmp"});
-    register_type(EntityType::BUSH0_DECOR,      {"assets/bush0.bmp"});
-    register_type(EntityType::BUSH1_DECOR,      {"assets/bush1.bmp"});
-    register_type(EntityType::BUSH2_DECOR,      {"assets/bush2.bmp"});
+    register_type(SpriteType::CASTLE_DECOR,     {"assets/statue.bmp"});
+    register_type(SpriteType::SPAWNER_DECOR,    {"assets/spawner.bmp"});
+    register_type(SpriteType::BUSH0_DECOR,      {"assets/bush0.bmp"});
+    register_type(SpriteType::BUSH1_DECOR,      {"assets/bush1.bmp"});
+    register_type(SpriteType::BUSH2_DECOR,      {"assets/bush2.bmp"});
     
-    register_type(EntityType::HEARTH,           {"assets/hearth.png", "assets/broken_hearth.png"});
+    register_type(SpriteType::HEARTH,           {"assets/hearth.png", "assets/broken_hearth.png"});
 
     load_level_tiles();
     load_decorations();
@@ -151,7 +151,7 @@ void Game::handle_mouse_event(Entities& objects, const SDL_MouseButtonEvent& mou
     if(mouse_event.button == SDL_BUTTON_LEFT){
         if(m_cur_level.is_occupied(mouse_vec)) return;
 
-        if(objects.add_tower(m_cur_level, EntityType::FIRE_TOWER, mouse_vec) > 0){
+        if(objects.add_tower(m_cur_level, SpriteType::FIRE_TOWER, mouse_vec) > 0){
             std::cout << "Added tower to tile (" << mouse_pos.x << ", "
                                                     << mouse_pos.y <<
                                                 ")" << std::endl;
@@ -165,7 +165,7 @@ void Game::handle_mouse_event(Entities& objects, const SDL_MouseButtonEvent& mou
     else if(mouse_event.button == SDL_BUTTON_MIDDLE){
         if(m_cur_level.is_occupied(mouse_vec)) return;
 
-        if(objects.add_tower(m_cur_level, EntityType::ICE_TOWER, mouse_vec) > 0){
+        if(objects.add_tower(m_cur_level, SpriteType::ICE_TOWER, mouse_vec) > 0){
             std::cout << "Added tower to tile (" << mouse_pos.x << ", "
                                                     << mouse_pos.y <<
                                                 ")" << std::endl;
@@ -178,8 +178,7 @@ void Game::handle_mouse_event(Entities& objects, const SDL_MouseButtonEvent& mou
     }
     else if(mouse_event.button == SDL_BUTTON_RIGHT){
         if(m_cur_level.is_road_tile(mouse_pos)){
-            auto id = objects.spawn_enemies_targeted(m_cur_level, m_target, mouse_pos, static_cast<EntityType>(static_cast<int>(EntityType::VIKING) + rand()%5));
-            m_render_system->load_to_layer(objects.m_sprites[id]);
+            auto id = objects.spawn_enemies_targeted(m_cur_level, m_target, mouse_pos, static_cast<SpriteType>(static_cast<int>(SpriteType::VIKING) + rand()%5));
 
         }
     }
@@ -217,7 +216,7 @@ void Game::update_game(){
     m_current_ticks = SDL_GetTicks();
     // std::cout << deltatime <<"\n";
     m_spawn_system.update(m_objects, m_cur_level, deltatime);
-    m_firing_system.update(m_objects, m_cur_level, *m_render_system, deltatime);
+    m_firing_system.update(m_objects, m_cur_level, deltatime);
     m_move_system.update(m_objects, m_cur_level, deltatime);
     m_enemy_collision_system.update(m_objects, m_cur_level, deltatime);
     m_castle_damage_system.update(m_objects, m_cur_level, deltatime);
@@ -277,7 +276,7 @@ void Game::add_target(Entities& objects, const Vector2D& pos){
     objects.m_positions[id].y = pos.y;
     // objects.m_flags[id] |= fEntityPosition;
 
-    // objects.m_sprites[id].index = EntityType::TARGET;
+    // objects.m_sprites[id].index = SpriteType::TARGET;
     // objects.m_sprites[id].scale = 1;
     // objects.m_sprites[id].width = tile_size.x;
     // objects.m_sprites[id].height = tile_size.y;
@@ -341,7 +340,7 @@ void Game::load_level_tiles(){
                     m_objects.m_sprites[obj].angle = 0;
                     m_objects.m_sprites[obj].flag = fUpperLeftSprite;
                     m_objects.m_sprites[obj].layer = SpriteLayer::BACKGROUND;
-                    m_objects.m_sprites[obj].type = EntityType::TILE;
+                    m_objects.m_sprites[obj].type = SpriteType::TILE;
                     m_objects.m_systems[obj] |= eSpriteSystem;
                 break;
                 case TileComponent::road_tile_int:
@@ -354,7 +353,7 @@ void Game::load_level_tiles(){
                     m_objects.m_sprites[obj].angle = 0;
                     m_objects.m_sprites[obj].flag = fUpperLeftSprite;
                     m_objects.m_sprites[obj].layer = SpriteLayer::BACKGROUND;
-                    m_objects.m_sprites[obj].type = EntityType::ROAD;
+                    m_objects.m_sprites[obj].type = SpriteType::ROAD;
                     m_objects.m_systems[obj] |= eSpriteSystem;
                 break;
                 case TileComponent::spawner_tile_int:
@@ -367,7 +366,7 @@ void Game::load_level_tiles(){
                     m_objects.m_sprites[obj].angle = 0;
                     m_objects.m_sprites[obj].flag = fUpperLeftSprite;
                     m_objects.m_sprites[obj].layer = SpriteLayer::BACKGROUND;
-                    m_objects.m_sprites[obj].type = EntityType::SPAWNER;
+                    m_objects.m_sprites[obj].type = SpriteType::SPAWNER;
                     m_objects.m_systems[obj] |= eSpriteSystem;
                 break;
                 case TileComponent::castle_tile_int:
@@ -380,7 +379,7 @@ void Game::load_level_tiles(){
                     m_objects.m_sprites[obj].angle = 0;
                     m_objects.m_sprites[obj].flag = fUpperLeftSprite;
                     m_objects.m_sprites[obj].layer = SpriteLayer::BACKGROUND;
-                    m_objects.m_sprites[obj].type = EntityType::CASTLE;
+                    m_objects.m_sprites[obj].type = SpriteType::CASTLE;
                     m_objects.m_systems[obj] |= eSpriteSystem;
                 break;
                 }
@@ -410,7 +409,6 @@ void Game::load_level_tiles(){
            (m_objects.m_systems[i] & eSpriteSystem) == 0 ){
             continue;
         }
-        m_render_system->load_to_layer(m_objects.m_sprites[i]);
     }
 }
 
@@ -421,15 +419,15 @@ void Game::load_decorations(){
     auto resolution = m_cur_level.get_resolution();
 
 //WARNING: sum of the decor elements should be less then grass tiles quantity otherwise deadlock
-    load_decor_sprite(castle_pos, EntityType::CASTLE_DECOR);
-    load_decor_sprite(spawner_pos, EntityType::SPAWNER_DECOR);
-    load_decor_random_sprites(EntityType::BUSH0_DECOR, 33);
-    load_decor_random_sprites(EntityType::BUSH1_DECOR, 44);
-    load_decor_random_sprites(EntityType::BUSH2_DECOR, 40);
+    load_decor_sprite(castle_pos, SpriteType::CASTLE_DECOR);
+    load_decor_sprite(spawner_pos, SpriteType::SPAWNER_DECOR);
+    load_decor_random_sprites(SpriteType::BUSH0_DECOR, 33);
+    load_decor_random_sprites(SpriteType::BUSH1_DECOR, 44);
+    load_decor_random_sprites(SpriteType::BUSH2_DECOR, 40);
 
 }
 
-void Game::load_decor_sprite(const Vector2D& pos, EntityType type){
+void Game::load_decor_sprite(const Vector2D& pos, SpriteType type){
     if(m_cur_level.is_decor_occupied(pos)){
         SDL_Log("ERROR: fail to load decor sprite");
         return;
@@ -459,11 +457,10 @@ void Game::load_decor_sprite(const Vector2D& pos, EntityType type){
     sprite.layer = SpriteLayer::DECORATION;
     sprite.type = type;
     m_objects.m_systems[obj] |= eSpriteSystem;
-    m_render_system->load_to_layer(sprite);
     m_cur_level.set_tile_decor_occupied(tile.row, tile.column, 1);
 }
 
-void Game::load_decor_random_sprites(EntityType type, size_t size){
+void Game::load_decor_random_sprites(SpriteType type, size_t size){
     auto resolution = m_cur_level.get_resolution();
     auto tile_size = m_cur_level.get_tile_size();
     for(int i = 0; i < size; i++){
@@ -498,18 +495,17 @@ void Game::load_decor_random_sprites(EntityType type, size_t size){
         sprite.layer = SpriteLayer::DECORATION;
         sprite.type = type;
         m_objects.m_systems[obj] |= eSpriteSystem;
-        m_render_system->load_to_layer(sprite);
         m_cur_level.set_tile_decor_occupied(row, column, 1);
     }
 }
 
 void Game::load_towers(){
-    auto id = m_objects.add_tower(m_cur_level, EntityType::ICE_TOWER, {761.657, 382.826});
-    id = m_objects.add_tower(m_cur_level, EntityType::FIRE_TOWER, {942.076, 378.737});
-    id = m_objects.add_tower(m_cur_level, EntityType::FIRE_TOWER, {615.781, 267.516});
+    auto id = m_objects.add_tower(m_cur_level, SpriteType::ICE_TOWER, {761.657, 382.826});
+    id = m_objects.add_tower(m_cur_level, SpriteType::FIRE_TOWER, {942.076, 378.737});
+    id = m_objects.add_tower(m_cur_level, SpriteType::FIRE_TOWER, {615.781, 267.516});
 }
 
-void Game::register_type(EntityType type, const std::vector<std::string>& textures){
+void Game::register_type(SpriteType type, const std::vector<std::string>& textures){
 
     m_render_system->register_type_sprite(type, textures);
     m_animation_system.register_type(type, textures.size());
@@ -533,10 +529,10 @@ void Game::load_hearth(){
     m_objects.m_sprites[id].colB = 0.6;
     m_objects.m_sprites[id].angle = 0;
     m_objects.m_sprites[id].flag = fCenterSprite;
-    m_objects.m_sprites[id].layer = SpriteLayer::BACKGROUND;
-    m_objects.m_sprites[id].type = EntityType::HEARTH;
-    m_objects.m_sprites[id].anim_index = -1;
+    m_objects.m_sprites[id].layer = SpriteLayer::HUD;
+    m_objects.m_sprites[id].type = SpriteType::HEARTH;
+    m_objects.m_sprites[id].anim_index = 0;
     m_objects.m_systems[id] |= eSpriteSystem;
+    m_objects.m_types[id] = EntityGlobalType::HUD_ENTITY;
 
-    m_render_system->load_to_layer(m_objects.m_sprites[id]);
 }

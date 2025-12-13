@@ -37,18 +37,20 @@ public:
     void unload_to_layer(const SpriteComponent&);
     bool is_type_valid(int type);
 
-    void register_type_sprite(EntityType type, const std::vector<std::string>& texturepath);
-    void unregister_type_sprite(EntityType type);
+    void register_type_sprite(SpriteType type, const std::vector<std::string>& texturepath);
+    void unregister_type_sprite(SpriteType type);
     SDL_Window* m_window;
     std::vector<SpriteComponent> m_background_sprites;
     std::vector<SpriteComponent> m_decoration_sprites;
     std::vector<SpriteComponent> m_entity_sprites;
+    std::vector<SpriteComponent> m_proj_sprites;
+    std::vector<SpriteComponent> m_hud_sprites;
     SDL_Renderer* m_renderer;
     SDL_Color m_background_color;
 
     std::unordered_map<std::string, SDL_Texture*>             m_textures;
-    std::unordered_map<EntityType, std::vector<SDL_Texture*>> m_registered_textures;
-    std::unordered_map<EntityType, std::vector<std::string>>  m_registered_types;
+    std::unordered_map<SpriteType, std::vector<SDL_Texture*>> m_registered_textures;
+    std::unordered_map<SpriteType, std::vector<std::string>>  m_registered_types;
     std::unordered_map<SDL_Texture*, std::vector<SDL_Vertex>> m_vertexBatches;
     std::unordered_map<SDL_Texture*, std::vector<int>>        m_indexBatches;
 private:
@@ -58,10 +60,10 @@ private:
     SDL_Texture* get_texture(std::string);
     bool render_sprite(const SpriteComponent& sprite);
     void add_sprite_vertices(SDL_Texture* texture, float x, float y, float w, float h);
-    std::vector<SDL_Texture*> get_registered_type_textures(EntityType type);
-    std::vector<std::string> get_registered_type_textures_pathes(EntityType type);
+    std::vector<SDL_Texture*> get_registered_type_textures(SpriteType type);
+    std::vector<std::string> get_registered_type_textures_pathes(SpriteType type);
     bool render_sprite_texture(const SpriteComponent& sprite, SDL_Texture* text);
-    size_t get_type_sprites_size(EntityType type);
+    size_t get_type_sprites_size(SpriteType type);
 
     std::vector<std::pair<std::string, SDL_FRect>> m_brushes_src;
 };

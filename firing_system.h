@@ -6,7 +6,7 @@
 
 struct FiringSystem{
 
-    void update(Entities& objects, Level& level, RenderSystem& render_system, float deltatime){
+    void update(Entities& objects, Level& level, float deltatime){
         for(int id = 0, n = objects.size(); id < n; id++){
             if((objects.m_systems[id] & eFiringSystem) == 0) continue;
 
@@ -35,7 +35,6 @@ struct FiringSystem{
                             auto id = objects.add_projectile(FiringType::eProjectile,
                                                              rect,
                                                              enemy_id);
-                            render_system.load_to_layer(objects.m_sprites[id]);
                             firing_comp.cooldown = firing_comp.interval;
                         }
                         else{
