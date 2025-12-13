@@ -155,13 +155,18 @@ bool RenderSystem::render_sprite(const SpriteComponent& sprite){
     bool res = true;
     auto textures = get_registered_type_textures(sprite.type);
     auto textures_pathes = get_registered_type_textures_pathes(sprite.type);
-    if(sprite.anim_index != -1){
+    if(sprite.anim_index != -1 && textures.size()){
         res &= render_sprite_texture(sprite, textures[sprite.anim_index]);
     }
     else {
         for(const auto& text: textures){
             res &= render_sprite_texture(sprite, text);
         }
+    }
+    if(sprite.type == SpriteType::HUD_LAYOUT){
+        render_rectangle({sprite.posX, sprite.posY, sprite.width, sprite.height},
+                        2.f,
+                        0.f);
     }
     return res;
 }
@@ -305,9 +310,9 @@ std::vector<std::string> RenderSystem::get_registered_type_textures_pathes(Sprit
 bool RenderSystem::render_sprite_texture(const SpriteComponent& sprite, SDL_Texture* text){
     bool res = false;
     SDL_FRect dest_rect = {sprite.posX,
-                        sprite.posY,
-                        sprite.width * sprite.scale,
-                        sprite.height * sprite.scale};
+                           sprite.posY,
+                           sprite.width * sprite.scale,
+                           sprite.height * sprite.scale};
     if(sprite.flag == fCenterSprite){
 
         //Shift sprite to the center of position
@@ -372,4 +377,36 @@ size_t RenderSystem::get_type_sprites_size(SpriteType type){
     }
     SDL_Log("WARNING: fail to get registered type %d textures", type);
     return size;
+}
+
+void RenderSystem::render_rectangle(SDL_FRect dest_rect, float width, float angle){
+    SDL_Surface* surface = SDL_CreateSurface(dest_rect.w, dest_rect.h, SDL_PIXELFORMAT_RGBA32);
+    if (!surface) {
+        printf("Failed to create surface: %s\n", SDL_GetError());
+        return;
+    }
+    
+    // Заполняем поверхность прозрачным цветом
+    SDL_FillSurfaceRect(surface, NULL, 0x0);
+
+    // Рисуем контур прямоугольника
+    int border_thickness = 1.f;
+    SDL_Rect outer_rect = {0, 0, static_cast<int>(dest_rect.w), static_cast<int>(dest_rect.h)};
+    SDL_Rect inner_rect = {
+        border_thickness, 
+        border_thickness, 
+        static_cast<int>(dest_rect.w) - 2 * border_thickness, 
+        static_cast<int>(dest_rect.h) - 2 * border_thickness
+    };
+
+    SDL_FPoint center = {dest_rect.w / 2, dest_rect.h / 2};
+    // Заполняем весь прямоугольник цветом
+    SDL_FillSurfaceRect(surface, &outer_rect, SDL_MapRGBA(SDL_GetPixelFormatDetails(surface->format), nullptr, 0xFF, 0, 0, 0xFF));
+    // Вырезаем внутреннюю часть чтобы получить контур
+    SDL_FillSurfaceRect(surface, &inner_rect, SDL_MapRGBA(SDL_GetPixelFormatDetails(surface->format), nullptr, 0, 0, 0, 0));
+    SDL_Texture* border_text = SDL_CreateTextureFromSurface(m_renderer, surface);
+    SDL_RenderTextureRotated(m_renderer, border_text, nullptr, &dest_rect, angle, &center, SDL_FLIP_HORIZONTAL);
+    
+    SDL_DestroySurface(surface);
+    SDL_DestroyTexture(border_text);
 }

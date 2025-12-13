@@ -1,10 +1,11 @@
 #pragma once
 #include "components.h"
 #include "level.h"
+#include <functional>
 
 class CastleDamageSystem{
 public:
-    void update(Entities& objects, Level& level, float deltatime){
+    void update(Entities& objects, Level& level, float deltatime, std::function<void(float)>callback){
         for(int id = 0, n = objects.size(); id < n; id++){
             if(objects.m_types[id] == EntityGlobalType::ENEMY_ENTITY){
 
@@ -13,8 +14,8 @@ public:
                     std::cout << "Enemy " << id << " damaged castle" << std::endl;
                     objects.reset_object(id);
 
-                    EntityID hearth_id = objects.get_object(SpriteType::HEARTH);
-                    objects.m_sprites[hearth_id].anim_index = (objects.m_sprites[hearth_id].anim_index + 1) % 2;
+                    callback(10.f);
+                    
                 }
             }
             else if(objects.m_types[id] == EntityGlobalType::PROJECTILE_ENTITY){

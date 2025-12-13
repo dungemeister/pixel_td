@@ -64,6 +64,7 @@ private:
     std::vector<std::string> get_registered_type_textures_pathes(SpriteType type);
     bool render_sprite_texture(const SpriteComponent& sprite, SDL_Texture* text);
     size_t get_type_sprites_size(SpriteType type);
+    void render_rectangle(SDL_FRect rect, float width, float angle);
 
     std::vector<std::pair<std::string, SDL_FRect>> m_brushes_src;
 };

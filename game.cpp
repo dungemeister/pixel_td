@@ -17,9 +17,9 @@ Game::Game()
     ,m_cursor_pos()
     ,m_width(16 * 120)
     ,m_height(9 * 120)
-    ,m_target()
     ,m_spawn_system()
     ,m_current_ticks(0)
+    ,m_hud_system()
 {
     init();
 }
@@ -102,19 +102,25 @@ void Game::init_game(){
     register_type(SpriteType::TANK,              {"assets/enemies/tank.png"});
     
     register_type(SpriteType::PROJECTILE,       {"assets/fire/fireball.png"});
+    register_type(SpriteType::AOE,              {});
 
     register_type(SpriteType::CASTLE_DECOR,     {"assets/statue.bmp"});
     register_type(SpriteType::SPAWNER_DECOR,    {"assets/spawner.bmp"});
     register_type(SpriteType::BUSH0_DECOR,      {"assets/bush0.bmp"});
     register_type(SpriteType::BUSH1_DECOR,      {"assets/bush1.bmp"});
     register_type(SpriteType::BUSH2_DECOR,      {"assets/bush2.bmp"});
+
+    register_type(SpriteType::HEALTH_BAR,       {});
     
+    register_type(SpriteType::HUD_LAYOUT,       {});
     register_type(SpriteType::HEARTH,           {"assets/hearth.png", "assets/broken_hearth.png"});
+    register_type(SpriteType::COINS,            {"assets/coins.png"});
 
     load_level_tiles();
     load_decorations();
     load_towers();
-    load_hearth();
+    
+    load_hud();
 }
 
 void Game::destroy_game(){
@@ -151,34 +157,27 @@ void Game::handle_mouse_event(Entities& objects, const SDL_MouseButtonEvent& mou
     if(mouse_event.button == SDL_BUTTON_LEFT){
         if(m_cur_level.is_occupied(mouse_vec)) return;
 
-        if(objects.add_tower(m_cur_level, SpriteType::FIRE_TOWER, mouse_vec) > 0){
-            std::cout << "Added tower to tile (" << mouse_pos.x << ", "
-                                                    << mouse_pos.y <<
-                                                ")" << std::endl;
-
-        }
-        else{
-            std::cout << "Cannot add tower to " << mouse_event.x << " " << mouse_event.y <<
-                         ". Tile already occupied or not in level map" << std::endl;
-        }
-    }
-    else if(mouse_event.button == SDL_BUTTON_MIDDLE){
-        if(m_cur_level.is_occupied(mouse_vec)) return;
-
-        if(objects.add_tower(m_cur_level, SpriteType::ICE_TOWER, mouse_vec) > 0){
-            std::cout << "Added tower to tile (" << mouse_pos.x << ", "
-                                                    << mouse_pos.y <<
-                                                ")" << std::endl;
-
-        }
-        else{
-            std::cout << "Cannot add tower to " << mouse_event.x << " " << mouse_event.y <<
-                         ". Tile already occupied or not in level map" << std::endl;
+        if(m_components_data[ComponentType::PLAYER_GOLD] > 0){
+            
+            if(objects.add_tower(m_cur_level, SpriteType::FIRE_TOWER, mouse_vec) > 0){
+                std::cout << "Added tower to tile (" << mouse_pos.x << ", "
+                                                        << mouse_pos.y <<
+                                                    ")" << std::endl;
+                auto callback = m_components_callbacks[ComponentType::PLAYER_GOLD];
+                callback(10.f);
+            }
+            else{
+                std::cout << "Cannot add tower to " << mouse_event.x << " " << mouse_event.y <<
+                            ". Tile already occupied or not in level map" << std::endl;
+            }
         }
     }
     else if(mouse_event.button == SDL_BUTTON_RIGHT){
         if(m_cur_level.is_road_tile(mouse_pos)){
-            auto id = objects.spawn_enemies_targeted(m_cur_level, m_target, mouse_pos, static_cast<SpriteType>(static_cast<int>(SpriteType::VIKING) + rand()%5));
+            auto id = objects.spawn_enemies_targeted(m_cur_level,
+                                                     m_cur_level.get_castle_pos(),
+                                                     mouse_pos,
+                                                     static_cast<SpriteType>(static_cast<int>(SpriteType::VIKING) + rand()%5));
 
         }
     }
@@ -219,9 +218,9 @@ void Game::update_game(){
     m_firing_system.update(m_objects, m_cur_level, deltatime);
     m_move_system.update(m_objects, m_cur_level, deltatime);
     m_enemy_collision_system.update(m_objects, m_cur_level, deltatime);
-    m_castle_damage_system.update(m_objects, m_cur_level, deltatime);
+    m_castle_damage_system.update(m_objects, m_cur_level, deltatime, m_components_callbacks.at(CASTLE_HEALTH));
     m_animation_system.update(m_objects, deltatime);
-
+    m_hud_system.update(deltatime);
     // m_render_system->clean_batch_frame();
     // m_render_system->clean_frame();
     
@@ -261,45 +260,6 @@ void Game::resize_callback(){
     //     s_objects.m_sprites[i].width = tile_width;
     //     s_objects.m_sprites[i].height = tile_height;
     // }
-}
-
-void Game::add_target(Entities& objects, const Vector2D& pos){
-    
-    m_target = pos;
-    objects.remove_object("target");
-
-    auto id = objects.add_object("target");
-    auto tile_size = m_cur_level.get_tile_size();
-
-    objects.m_positions[id].angle = 0;
-    objects.m_positions[id].x = pos.x;
-    objects.m_positions[id].y = pos.y;
-    // objects.m_flags[id] |= fEntityPosition;
-
-    // objects.m_sprites[id].index = SpriteType::TARGET;
-    // objects.m_sprites[id].scale = 1;
-    // objects.m_sprites[id].width = tile_size.x;
-    // objects.m_sprites[id].height = tile_size.y;
-    // objects.m_sprites[id].r = 0.6;
-    // objects.m_sprites[id].g = 0.6;
-    // objects.m_sprites[id].b = 0.6;
-    // objects.m_flags[id] |= fEntitySprite;
-
-    objects.m_borders[id].x_min = 0;
-    objects.m_borders[id].x_max = 0;
-    // objects.m_borders[id].y_min = (tile.pos.y - tile_size.y) / 2;
-    objects.m_borders[id].y_min = (pos.y - tile_size.y / 4);
-    objects.m_borders[id].y_max = (pos.y + tile_size.y / 4);
-    // objects.m_flags[id] |= fEntityMapBorder;
-
-    objects.m_moves[id].speed = 0;
-    // objects.m_moves[id].rotation_angle = RandomFloat(-1.f, 1.f);
-    // objects.m_flags[id] |= fEntityMove;
-
-    objects.m_types[id] = EntityGlobalType::FRIEND_ENTITY;
-
-    std::cout << "New Target" << std::endl;
-
 }
 
 void Game::load_level_tiles(){
@@ -511,9 +471,19 @@ void Game::register_type(SpriteType type, const std::vector<std::string>& textur
     m_animation_system.register_type(type, textures.size());
 }
 
-void Game::load_hearth(){
-    auto id = m_objects.add_object("hearth");
-    Vector2D pos = {100, 100};
+void Game::load_hud(){
+    m_hud_system = HudSystem({0, 0}, (m_width - m_cur_level.get_size().x) / 2, m_height);
+    m_hud_system.m_hud_layer.set_grid(15, 2);
+    
+    load_layout();
+    load_hearth();
+    load_coins();
+}
+
+void Game::load_layout(){
+    auto id = m_objects.add_object("hud_layout");
+    Vector2D pos = m_hud_system.m_hud_layer.pos;
+
     m_objects.m_positions[id].angle = 0;
     m_objects.m_positions[id].x = pos.x;
     m_objects.m_positions[id].y = pos.y;
@@ -521,6 +491,44 @@ void Game::load_hearth(){
 
     m_objects.m_sprites[id].posX = pos.x;
     m_objects.m_sprites[id].posY = pos.y;
+    m_objects.m_sprites[id].width = m_hud_system.m_hud_layer.rect.w;
+    m_objects.m_sprites[id].height = m_hud_system.m_hud_layer.rect.h;
+    m_objects.m_sprites[id].scale = 1;
+    m_objects.m_sprites[id].colR = 0.6;
+    m_objects.m_sprites[id].colG = 0.6;
+    m_objects.m_sprites[id].colB = 0.6;
+    m_objects.m_sprites[id].angle = 0;
+    m_objects.m_sprites[id].flag = fUpperLeftSprite;
+    m_objects.m_sprites[id].layer = SpriteLayer::HUD;
+    m_objects.m_sprites[id].type = SpriteType::HUD_LAYOUT;
+    m_objects.m_sprites[id].anim_index = 0;
+    m_objects.m_systems[id] |= eSpriteSystem;
+    m_objects.m_types[id] = EntityGlobalType::HUD_ENTITY;
+}
+
+void Game::load_hearth(){
+    m_components_data.emplace(ComponentType::CASTLE_HEALTH, 100.f);
+    m_components_callbacks.emplace(ComponentType::CASTLE_HEALTH, [this](float value){
+        auto it = m_components_data.find(ComponentType::CASTLE_HEALTH);
+        if(it != m_components_data.end()){
+            it->second -= value;
+            SDL_Log("Health %.1f", it->second);
+            EntityID hearth_id = m_objects.get_object(SpriteType::HEARTH);
+            m_objects.m_sprites[hearth_id].anim_index = (m_objects.m_sprites[hearth_id].anim_index + 1) % 2;
+        }
+    });
+
+    auto id = m_objects.add_object("hud_hearth");
+    auto grid = m_hud_system.m_hud_layer.get_grid();
+    auto component = m_hud_system.m_hud_layer.add_component(grid.first - 1, 0);
+
+    m_objects.m_positions[id].angle = 0;
+    m_objects.m_positions[id].x = component.pos.x;
+    m_objects.m_positions[id].y = component.pos.y;
+    m_objects.m_systems[id] |= ePositionSystem;
+
+    m_objects.m_sprites[id].posX = component.pos.x;
+    m_objects.m_sprites[id].posY = component.pos.y;
     m_objects.m_sprites[id].width = 64;
     m_objects.m_sprites[id].height = 64;
     m_objects.m_sprites[id].scale = 1;
@@ -528,11 +536,47 @@ void Game::load_hearth(){
     m_objects.m_sprites[id].colG = 0.6;
     m_objects.m_sprites[id].colB = 0.6;
     m_objects.m_sprites[id].angle = 0;
-    m_objects.m_sprites[id].flag = fCenterSprite;
+    m_objects.m_sprites[id].flag = fUpperLeftSprite;
     m_objects.m_sprites[id].layer = SpriteLayer::HUD;
     m_objects.m_sprites[id].type = SpriteType::HEARTH;
     m_objects.m_sprites[id].anim_index = 0;
     m_objects.m_systems[id] |= eSpriteSystem;
     m_objects.m_types[id] = EntityGlobalType::HUD_ENTITY;
 
+}
+
+void Game::load_coins(){
+    m_components_data.emplace(ComponentType::PLAYER_GOLD, 100.f);
+    m_components_callbacks.emplace(ComponentType::PLAYER_GOLD, [this](float value){
+        auto it = m_components_data.find(ComponentType::PLAYER_GOLD);
+        if(it != m_components_data.end()){
+            it->second -= value;
+            SDL_Log("Gold %.1f", it->second);
+        }
+    });
+
+    auto id = m_objects.add_object("hud_coins");
+    auto grid = m_hud_system.m_hud_layer.get_grid();
+    auto component = m_hud_system.m_hud_layer.add_component(grid.first - 2, 0);
+
+    m_objects.m_positions[id].angle = 0;
+    m_objects.m_positions[id].x = component.pos.x;
+    m_objects.m_positions[id].y = component.pos.y;
+    m_objects.m_systems[id] |= ePositionSystem;
+
+    m_objects.m_sprites[id].posX = component.pos.x;
+    m_objects.m_sprites[id].posY = component.pos.y;
+    m_objects.m_sprites[id].width = 64;
+    m_objects.m_sprites[id].height = 64;
+    m_objects.m_sprites[id].scale = 1;
+    m_objects.m_sprites[id].colR = 0.6;
+    m_objects.m_sprites[id].colG = 0.6;
+    m_objects.m_sprites[id].colB = 0.6;
+    m_objects.m_sprites[id].angle = 0;
+    m_objects.m_sprites[id].flag = fUpperLeftSprite;
+    m_objects.m_sprites[id].layer = SpriteLayer::HUD;
+    m_objects.m_sprites[id].type = SpriteType::COINS;
+    m_objects.m_sprites[id].anim_index = 0;
+    m_objects.m_systems[id] |= eSpriteSystem;
+    m_objects.m_types[id] = EntityGlobalType::HUD_ENTITY;
 }

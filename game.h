@@ -10,6 +10,7 @@
 #include "enemy_collision_system.h"
 #include "spawn_system.h"
 #include "firing_system.h"
+#include "hud_system.h"
 
 class Game{
 public:
@@ -33,6 +34,7 @@ private:
     EnemyCollistionSystem m_enemy_collision_system;
     SpawnSystem         m_spawn_system;
     FiringSystem        m_firing_system;
+    HudSystem           m_hud_system;
     Entities            m_objects;
 
     std::vector<Level> m_levels;
@@ -40,11 +42,12 @@ private:
 
     Uint64 m_current_ticks;
 
+    std::unordered_map<ComponentType, float> m_components_data;
+    std::unordered_map<ComponentType, std::function<void(float)>> m_components_callbacks;
+
     int m_running;
     int m_width;
     int m_height;
-
-    Vector2D m_target;
 
     void init();
     void load_cursor();
@@ -52,12 +55,16 @@ private:
     void init_game();
     void resize_callback();
     void handle_mouse_event(Entities& objects, const SDL_MouseButtonEvent& mouse_event);
-    void add_target(Entities& objects, const Vector2D& pos);
     void load_level_tiles();
     void load_decorations();
     void load_towers();
     void load_hearth();
+    void load_coins();
+    void load_hud();
+    void load_layout();
     void load_decor_sprite(const Vector2D& pos, SpriteType type);
     void load_decor_random_sprites(SpriteType type, size_t size);
     void register_type(SpriteType type, const std::vector<std::string>& textures);
+
+    void update_castle_health(float value);
 };

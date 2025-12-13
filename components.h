@@ -107,7 +107,9 @@ enum SpriteType{
     //EFFECTS LAYER
     HEALTH_BAR,
     //HUD
+    HUD_LAYOUT,
     HEARTH,
+    COINS,
 };
 
 typedef int EntitySystems_t;
@@ -136,7 +138,8 @@ struct SpriteComponent
 };
 
 enum TowerType{
-    RocketTower = 0,
+    FIRE_TOWER_DATA,
+    ICE_TOWER_DATA,
 };
 
 struct MapComponent{
@@ -170,7 +173,9 @@ struct HealthComponent{
     int alive;
 };
 
+struct HudComponent{
 
+};
 
 struct Entities{
 Entities() {
