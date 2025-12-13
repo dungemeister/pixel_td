@@ -46,7 +46,7 @@ public:
                 objects.m_sprites[id].posY = objects.m_positions[id].y;
             }
             else if(objects.m_moves[id].targeted &&
-                   (objects.m_types[id] == EntityType::PROJECTILE)){
+                   (objects.m_types[id] == EntityGlobalType::PROJECTILE_ENTITY)){
 
                 auto target_id = objects.m_moves[id].target_id;
                 //Update target position if target still alive
