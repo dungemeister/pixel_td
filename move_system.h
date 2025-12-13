@@ -9,7 +9,7 @@ public:
         for(int id = 0, n = objects.size(); id < n; id++){
             if((objects.m_systems[id] & eMoveSystem) == 0) continue;
             
-            if(objects.m_moves[id].targeted && (objects.m_types[id] == EntityType::ENEMY)){
+            if(objects.m_moves[id].targeted && (objects.m_types[id] == EntityGlobalType::ENEMY_ENTITY)){
                 Vector2D pos = {objects.m_positions[id].x, objects.m_positions[id].y};
                 Vector2D diff = objects.m_moves[id].target - pos;
                 Vector2D force = CalculateLaneConstraintForce(level, pos);

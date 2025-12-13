@@ -9,10 +9,10 @@ public:
         collisions.reserve(objects.size() * 2);
 
         for(int id1 = 0, n = objects.size(); id1 < n; id1++){
-            if(objects.m_types[id1] != EntityType::ENEMY) continue;
+            if(objects.m_types[id1] != EntityGlobalType::ENEMY_ENTITY) continue;
 
             for(int id2 = id1 + 1; id2 < n; id2++){
-                if(objects.m_types[id2] != EntityType::ENEMY) continue;
+                if(objects.m_types[id2] != EntityGlobalType::ENEMY_ENTITY) continue;
 
                 if (circles_overlap(
                     objects.m_positions[id1].get_vector2d(), 10.f,

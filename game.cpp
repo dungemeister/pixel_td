@@ -95,7 +95,11 @@ void Game::init_game(){
                                                  "assets/fire/fire_tower4.png",
                                                  "assets/fire/fire_tower5.png",
                                                  "assets/fire/fire_tower3.png"});
-    register_type(EntityType::ENEMY,            {"assets/enemy.png"});
+    register_type(EntityType::VIKING,            {"assets/enemies/viking.png"});
+    register_type(EntityType::DRAGONIT,          {"assets/enemies/dragonit.png"});
+    register_type(EntityType::BEE,               {"assets/enemies/bee.png"});
+    register_type(EntityType::SERJANT,           {"assets/enemies/serjant.png"});
+    register_type(EntityType::TANK,              {"assets/enemies/tank.png"});
     
     register_type(EntityType::PROJECTILE,       {"assets/fire/fireball.png"});
 
@@ -104,10 +108,13 @@ void Game::init_game(){
     register_type(EntityType::BUSH0_DECOR,      {"assets/bush0.bmp"});
     register_type(EntityType::BUSH1_DECOR,      {"assets/bush1.bmp"});
     register_type(EntityType::BUSH2_DECOR,      {"assets/bush2.bmp"});
+    
+    register_type(EntityType::HEARTH,           {"assets/hearth.png", "assets/broken_hearth.png"});
 
     load_level_tiles();
     load_decorations();
     load_towers();
+    load_hearth();
 }
 
 void Game::destroy_game(){
@@ -171,7 +178,7 @@ void Game::handle_mouse_event(Entities& objects, const SDL_MouseButtonEvent& mou
     }
     else if(mouse_event.button == SDL_BUTTON_RIGHT){
         if(m_cur_level.is_road_tile(mouse_pos)){
-            auto id = objects.spawn_enemies_targeted(m_cur_level, m_target, mouse_pos);
+            auto id = objects.spawn_enemies_targeted(m_cur_level, m_target, mouse_pos, static_cast<EntityType>(static_cast<int>(EntityType::VIKING) + rand()%5));
             m_render_system->load_to_layer(objects.m_sprites[id]);
 
         }
@@ -290,7 +297,7 @@ void Game::add_target(Entities& objects, const Vector2D& pos){
     // objects.m_moves[id].rotation_angle = RandomFloat(-1.f, 1.f);
     // objects.m_flags[id] |= fEntityMove;
 
-    objects.m_types[id] = TARGET;
+    objects.m_types[id] = EntityGlobalType::FRIEND_ENTITY;
 
     std::cout << "New Target" << std::endl;
 
@@ -391,7 +398,7 @@ void Game::load_level_tiles(){
                 m_objects.m_borders[obj].y_max = tile_height * r;
                 m_objects.m_systems[obj] |= eMapBorderSystem;
 
-                m_objects.m_types[obj] = EntityType::TILE;
+                m_objects.m_types[obj] = EntityGlobalType::BACKGROUND_ENTITY;
             }
 
 
@@ -506,4 +513,30 @@ void Game::register_type(EntityType type, const std::vector<std::string>& textur
 
     m_render_system->register_type_sprite(type, textures);
     m_animation_system.register_type(type, textures.size());
+}
+
+void Game::load_hearth(){
+    auto id = m_objects.add_object("hearth");
+    Vector2D pos = {100, 100};
+    m_objects.m_positions[id].angle = 0;
+    m_objects.m_positions[id].x = pos.x;
+    m_objects.m_positions[id].y = pos.y;
+    m_objects.m_systems[id] |= ePositionSystem;
+
+    m_objects.m_sprites[id].posX = pos.x;
+    m_objects.m_sprites[id].posY = pos.y;
+    m_objects.m_sprites[id].width = 64;
+    m_objects.m_sprites[id].height = 64;
+    m_objects.m_sprites[id].scale = 1;
+    m_objects.m_sprites[id].colR = 0.6;
+    m_objects.m_sprites[id].colG = 0.6;
+    m_objects.m_sprites[id].colB = 0.6;
+    m_objects.m_sprites[id].angle = 0;
+    m_objects.m_sprites[id].flag = fCenterSprite;
+    m_objects.m_sprites[id].layer = SpriteLayer::BACKGROUND;
+    m_objects.m_sprites[id].type = EntityType::HEARTH;
+    m_objects.m_sprites[id].anim_index = -1;
+    m_objects.m_systems[id] |= eSpriteSystem;
+
+    m_render_system->load_to_layer(m_objects.m_sprites[id]);
 }

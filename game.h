@@ -56,6 +56,7 @@ private:
     void load_level_tiles();
     void load_decorations();
     void load_towers();
+    void load_hearth();
     void load_decor_sprite(const Vector2D& pos, EntityType type);
     void load_decor_random_sprites(EntityType type, size_t size);
     void register_type(EntityType type, const std::vector<std::string>& textures);

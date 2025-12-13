@@ -66,6 +66,15 @@ struct BorderComponent{
     
 };
 
+enum EntityGlobalType{
+    UNKNOWN_ENTITY,
+    BACKGROUND_ENTITY,
+    DECORATION_ENTITY,
+    ENEMY_ENTITY,
+    FRIEND_ENTITY,
+    PROJECTILE_ENTITY,
+};
+
 enum EntityType{
     UNDEFINED  = 0,
     //BACKGROUND LAYER
@@ -79,16 +88,22 @@ enum EntityType{
     BUSH0_DECOR,
     BUSH1_DECOR,
     BUSH2_DECOR,
-    //ENTITY LAYER
+    //ENTITY LAYER.TOWERS
     TOWER      ,
     ICE_TOWER  ,
     FIRE_TOWER  ,
-    ENEMY      ,
-    TARGET     ,
+    //ENTITY LAYER.ENEMIES
+    VIKING,
+    DRAGONIT,
+    BEE,
+    SERJANT,
+    TANK,
+    TARGET,
     //FIRING LAYER
     PROJECTILE,
     AOE,
     //EFFECTS LAYER
+    HEARTH,
 };
 
 typedef int EntitySystems_t;
@@ -171,7 +186,7 @@ Entities() {
     std::vector<HealthComponent>    m_health;
     std::vector<VersionComponent>   m_versions;
     std::vector<EntitySystems_t>    m_systems;
-    std::vector<EntityType>         m_types;
+    std::vector<EntityGlobalType>   m_types;
 
     EntityID get_empty_id() { return m_empty_id; }
 
@@ -192,7 +207,7 @@ Entities() {
     size_t size() { return m_names.size(); }
 
     EntityID add_object(const std::string&& name){
-        SDL_Log("Added %s", name.c_str());
+        // SDL_Log("Added %s", name.c_str());
         for(int id = 0, n = m_names.size(); id < n; id++)
         {
             if(m_health[id].alive) continue;
@@ -214,7 +229,7 @@ Entities() {
         m_sprites.push_back(SpriteComponent());
         m_systems.push_back(EntitySystems::eDummySystem);
         m_borders.push_back(BorderComponent());
-        m_types.push_back(EntityType::UNDEFINED);
+        m_types.push_back(EntityGlobalType::UNKNOWN_ENTITY);
         m_animations.push_back(AnimationComponent());
         m_firings.push_back(FiringComponent());
         m_health.push_back(HealthComponent());
@@ -232,7 +247,7 @@ Entities() {
         m_sprites[id] = SpriteComponent();
         m_systems[id] = EntitySystems::eDummySystem;
         m_borders[id] = BorderComponent();
-        m_types[id] = EntityType::UNDEFINED;
+        m_types[id] = EntityGlobalType::UNKNOWN_ENTITY;
         m_animations[id] = AnimationComponent();
         m_firings[id] = FiringComponent();
         m_health[id].alive = 0;
@@ -279,7 +294,7 @@ Entities() {
         m_health[id].alive = state;
     }
 
-    EntityID spawn_enemies_targeted(const Level& level, const Vector2D& target, const SDL_FPoint& spawn_pos){
+    EntityID spawn_enemies_targeted(const Level& level, const Vector2D& target, const SDL_FPoint& spawn_pos, EntityType type){
         auto id = add_object("enemy");
         auto tile_size = level.get_tile_size();
         auto path      = level.get_road_tiles();
@@ -293,16 +308,32 @@ Entities() {
         m_sprites[id].posY = spawn_pos.y;
         m_sprites[id].width = tile_size.x;
         m_sprites[id].height = tile_size.y;
-        m_sprites[id].scale = 0.5;
         m_sprites[id].colR = 0.6;
         m_sprites[id].colG = 0.6;
         m_sprites[id].colB = 0.6;
         m_sprites[id].angle = 0;
         m_sprites[id].flag = fCenterSprite;
         m_sprites[id].layer = SpriteLayer::ENTITY;
-        m_sprites[id].type = EntityType::ENEMY;
+        m_sprites[id].type = type;
         m_sprites[id].anim_index = -1;
         m_systems[id] |= eSpriteSystem;
+        switch(type){
+            case EntityType::VIKING:
+            case EntityType::BEE:
+                m_sprites[id].scale = 0.5;
+            break;
+            case EntityType::DRAGONIT:
+                m_sprites[id].scale = 0.7;
+            break;
+            case EntityType::SERJANT:
+                m_sprites[id].scale = 0.9;
+            break;
+            case EntityType::TANK:
+                m_sprites[id].scale = 1.1;
+            break;
+            default:
+            SDL_Log("WARNING: Unexpected enemy type %d", type);
+        }
 
         m_borders[id].x_min = 0;
         m_borders[id].x_max = 0;
@@ -319,12 +350,12 @@ Entities() {
         // objects.m_moves[id].rotation_angle = RandomFloat(-1.f, 1.f);
         m_systems[id] |= eMoveSystem;
 
-        m_types[id] = EntityType::ENEMY;
+        m_types[id] = EntityGlobalType::ENEMY_ENTITY;
 
         return id;
     }
 
-    size_t get_objects_size(EntityType type){
+    size_t get_objects_size(EntityGlobalType type){
         size_t size = 0;
         for(int i = 0 ; i < Entities::size(); i++){
             if(m_types[i] == type)
@@ -372,7 +403,7 @@ Entities() {
 
                 m_systems[id] |= eSpriteAnimationSystem | eFiringSystem;
             }
-            m_types[id] = FIRE_TOWER;
+            m_types[id] = EntityGlobalType::FRIEND_ENTITY;
 
             level.set_tile_occupied(tile.row, tile.column, 1);
             return id;
@@ -386,7 +417,7 @@ Entities() {
         EntityID res = get_empty_id();
         for(int id = 1, n = Entities::size(); id < n; id++){
             
-            if(m_types[id] == EntityType::ENEMY){
+            if(m_types[id] == EntityGlobalType::ENEMY_ENTITY){
                 auto diff = (m_positions[id].get_vector2d() - tower_pos).magnitude();
                 if(diff < length && diff < radius){
                     length = diff;
@@ -403,7 +434,7 @@ Entities() {
         EntityID res = get_empty_id();
         for(int id = 1, n = Entities::size(); id < n; id++){
             
-            if(m_types[id] == EntityType::ENEMY){
+            if(m_types[id] == EntityGlobalType::ENEMY_ENTITY){
                 auto diff = (m_positions[id].get_vector2d() - target).magnitude();
                 if(diff < length){
                     length = diff;
@@ -419,7 +450,7 @@ Entities() {
         std::vector<EntityID> res;
         for(int id = 1, n = Entities::size(); id < n; id++){
             
-            if(m_types[id] == EntityType::ENEMY){
+            if(m_types[id] == EntityGlobalType::ENEMY_ENTITY){
                 auto diff = (m_positions[id].get_vector2d() - pos).magnitude();
                 if(diff <= radius){
                     res.push_back(id);
@@ -438,7 +469,7 @@ Entities() {
 
         for(int id = 1, n = Entities::size(); id < n; id++){
             
-            if(m_types[id] == EntityType::ENEMY){
+            if(m_types[id] == EntityGlobalType::ENEMY_ENTITY){
                 auto diff_radius = (m_positions[id].get_vector2d() - pos).magnitude();
                 if(diff_radius <= radius){
                     diff_to_target = (m_positions[id].get_vector2d() - target).magnitude();
@@ -485,9 +516,20 @@ Entities() {
         m_moves[id].speed = 200.f;
         m_systems[id] |= eMoveSystem;
 
-        m_types[id] = EntityType::PROJECTILE;
+        m_types[id] = EntityGlobalType::PROJECTILE_ENTITY;
 
         return id;
+    }
+
+    EntityID get_object(EntityType type){
+        for(int id = get_empty_id() + 1, n = Entities::size(); id < n; id++){
+            
+            if(m_sprites[id].type == type){
+                return id;
+            }
+
+        }
+        return get_empty_id();
     }
 };
 

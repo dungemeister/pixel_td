@@ -6,22 +6,25 @@ class CastleDamageSystem{
 public:
     void update(Entities& objects, Level& level, float deltatime){
         for(int id = 0, n = objects.size(); id < n; id++){
-            if(objects.m_types[id] == EntityType::ENEMY){
+            if(objects.m_types[id] == EntityGlobalType::ENEMY_ENTITY){
 
                 Vector2D pos = objects.m_positions[id].get_vector2d();
                 if(level.is_pos_in_castle(pos)){
                     std::cout << "Enemy " << id << " damaged castle" << std::endl;
                     objects.reset_object(id);
+
+                    EntityID hearth_id = objects.get_object(EntityType::HEARTH);
+                    objects.m_sprites[hearth_id].anim_index = (objects.m_sprites[hearth_id].anim_index + 1) % 2;
                 }
             }
-            else if(objects.m_types[id] == EntityType::PROJECTILE){
+            else if(objects.m_types[id] == EntityGlobalType::PROJECTILE_ENTITY){
                 Vector2D pos = objects.m_positions[id].get_vector2d();
                 Vector2D target = objects.m_moves[id].target;
                 auto diff = target - pos;
                 auto enemy_id = objects.m_moves[id].target_id;
                 if(diff.magnitude() <= 0.1f){
                     // objects.update_other_projectiles(id);
-                    if(objects.m_types[enemy_id] == EntityType::ENEMY &&
+                    if(objects.m_types[enemy_id] == EntityGlobalType::ENEMY_ENTITY &&
                        objects.is_alive(enemy_id) &&
                        objects.get_version_component(enemy_id).version == objects.m_moves[id].target_version.version){
 
