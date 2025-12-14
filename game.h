@@ -14,6 +14,12 @@
 
 class Game{
 public:
+enum GameState{
+    MainMenu,
+    Gameplay,
+    PauseMenu,
+    Settings,
+};
     Game();
     ~Game() = default;
     void destroy_game();
@@ -48,6 +54,7 @@ private:
     std::unordered_map<ComponentType, float> m_components_data;
     std::unordered_map<ComponentType, std::function<void(float)>> m_components_callbacks;
 
+    GameState m_state;
     int m_running;
     int m_width;
     int m_height;

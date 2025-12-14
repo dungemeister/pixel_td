@@ -29,7 +29,10 @@ public:
                        objects.is_alive(enemy_id) &&
                        objects.get_version_component(enemy_id).version == objects.m_moves[id].target_version.version){
 
-                            objects.reset_object(enemy_id);
+                            auto burst_damage = objects.m_firings[id].descr->burst_damage;
+                            objects.m_health[enemy_id].cur_health -= burst_damage;
+                            if(objects.m_health[enemy_id].cur_health <= 0.f)
+                                objects.reset_object(enemy_id);
                        }
                     
                     objects.reset_object(id);

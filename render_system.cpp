@@ -7,8 +7,9 @@
 
 void RenderSystem::render(const Entities& objects){
     clean_frame();
-    for(auto& sprite: objects.m_sprites){
-        load_to_layer(sprite);
+
+    for(int id = objects.get_empty_id() + 1, n = objects.size(); id < n; id++){
+        load_to_layer(objects.m_sprites[id], objects.m_health[id]);
     }
 
     for(auto& sprite_data: m_background_sprites){
@@ -21,9 +22,15 @@ void RenderSystem::render(const Entities& objects){
             SDL_Log("render decoration sprite: %s", SDL_GetError());
         }
     }
-    for(auto& sprite_data: m_entity_sprites){
-        if(!render_sprite(sprite_data)){
+    for(int id = 0; id < m_entity_sprites.size(); id++){
+        if(!render_sprite(m_entity_sprites[id])){
             SDL_Log("render entity sprite: %s", SDL_GetError());
+        }
+        if((m_entity_sprites[id].flag & fSpriteHealthBar) == 0) continue;
+        
+        if(!render_health_bar(m_entity_sprites[id], m_entity_hps[id])){
+            SDL_Log("render entity health: %s", SDL_GetError());
+
         }
     }
     for(auto& sprite_data: m_proj_sprites){
@@ -166,7 +173,8 @@ bool RenderSystem::render_sprite(const SpriteComponent& sprite){
     else{
         render_rectangle({sprite.posX, sprite.posY, sprite.width, sprite.height},
                         2.f,
-                        0.f);
+                        0.f,
+                        false);
     }
     return res;
 }
@@ -251,19 +259,22 @@ void RenderSystem::clean_frame(){
     m_entity_sprites.clear();
     m_proj_sprites.clear();
     m_hud_sprites.clear();
+
+    m_entity_hps.clear();
 }
 
-void RenderSystem::load_to_layer(const SpriteComponent& sprite){
+void RenderSystem::load_to_layer(const SpriteComponent& sprite, const HealthComponent& health){
 
     switch(sprite.layer){
         case SpriteLayer::BACKGROUND:
             m_background_sprites.emplace_back(sprite);
-        break;
         case SpriteLayer::DECORATION:
             m_decoration_sprites.emplace_back(sprite);
         break;
         case SpriteLayer::ENTITY:
             m_entity_sprites.emplace_back(sprite);
+            m_entity_hps.emplace_back(health);
+
         break;
         case SpriteLayer::PROJECTILES:
             m_proj_sprites.emplace_back(sprite);
@@ -379,7 +390,7 @@ size_t RenderSystem::get_type_sprites_size(SpriteType type){
     return size;
 }
 
-void RenderSystem::render_rectangle(SDL_FRect dest_rect, float width, float angle){
+void RenderSystem::render_rectangle(SDL_FRect dest_rect, float width, float angle, bool filled){
     SDL_Surface* surface = SDL_CreateSurface(dest_rect.w, dest_rect.h, SDL_PIXELFORMAT_RGBA32);
     if (!surface) {
         printf("Failed to create surface: %s\n", SDL_GetError());
@@ -402,11 +413,34 @@ void RenderSystem::render_rectangle(SDL_FRect dest_rect, float width, float angl
     SDL_FPoint center = {dest_rect.w / 2, dest_rect.h / 2};
     // Заполняем весь прямоугольник цветом
     SDL_FillSurfaceRect(surface, &outer_rect, SDL_MapRGBA(SDL_GetPixelFormatDetails(surface->format), nullptr, 0xFF, 0, 0, 0xFF));
-    // Вырезаем внутреннюю часть чтобы получить контур
-    SDL_FillSurfaceRect(surface, &inner_rect, SDL_MapRGBA(SDL_GetPixelFormatDetails(surface->format), nullptr, 0, 0, 0, 0));
+    if(!filled){
+        // Вырезаем внутреннюю часть чтобы получить контур
+        SDL_FillSurfaceRect(surface, &inner_rect, SDL_MapRGBA(SDL_GetPixelFormatDetails(surface->format), nullptr, 0, 0, 0, 0));
+    }
+
     SDL_Texture* border_text = SDL_CreateTextureFromSurface(m_renderer, surface);
     SDL_RenderTextureRotated(m_renderer, border_text, nullptr, &dest_rect, angle, &center, SDL_FLIP_HORIZONTAL);
     
     SDL_DestroySurface(surface);
     SDL_DestroyTexture(border_text);
+}
+
+bool RenderSystem::render_bar(SDL_FRect rect, float angle, float percentage){
+    SDL_FRect border_rect = {rect.x, rect.y, rect.w, rect.h * 0.1f};
+    SDL_FRect filled_rect = {rect.x, rect.y, rect.w * percentage, rect.h * 0.1f};
+    render_rectangle(border_rect, 2.f, angle, false);
+    render_rectangle(filled_rect, 2.f, angle, true);
+
+    return true;
+}
+
+bool RenderSystem::render_health_bar(const SpriteComponent& sprite, const HealthComponent& health){
+    
+    float percentage = health.cur_health / health.max_health;
+    if(percentage >= 1.f) return true;
+    
+    SDL_FRect dest_rect= {sprite.posX, sprite.posY, sprite.width * sprite.scale, sprite.height * sprite.scale};
+
+    render_bar(dest_rect, sprite.angle, percentage);
+    return true;
 }

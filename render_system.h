@@ -33,7 +33,7 @@ public:
     void render_batch();
     void clean_batch_frame();
     void clean_frame();
-    void load_to_layer(const SpriteComponent&);
+    void load_to_layer(const SpriteComponent&, const HealthComponent& health);
     void unload_to_layer(const SpriteComponent&);
     bool is_type_valid(int type);
 
@@ -45,6 +45,9 @@ public:
     std::vector<SpriteComponent> m_entity_sprites;
     std::vector<SpriteComponent> m_proj_sprites;
     std::vector<SpriteComponent> m_hud_sprites;
+
+    std::vector<HealthComponent> m_entity_hps;
+
     SDL_Renderer* m_renderer;
     SDL_Color m_background_color;
 
@@ -64,7 +67,9 @@ private:
     std::vector<std::string> get_registered_type_textures_pathes(SpriteType type);
     bool render_sprite_texture(const SpriteComponent& sprite, SDL_Texture* text);
     size_t get_type_sprites_size(SpriteType type);
-    void render_rectangle(SDL_FRect rect, float width, float angle);
+    void render_rectangle(SDL_FRect rect, float width, float angle, bool filled);
+    bool render_bar(SDL_FRect rect, float angle, float percentage);
+    bool render_health_bar(const SpriteComponent& sprite, const HealthComponent& health);
 
     std::vector<std::pair<std::string, SDL_FRect>> m_brushes_src;
 };

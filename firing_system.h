@@ -33,7 +33,7 @@ struct FiringSystem{
                                               tile_size.x * rect_scale,
                                               tile_size.y * rect_scale};
                             auto tower_descr = objects.get_tower_descr(firing_comp.descr->type);
-                            auto id = objects.add_projectile(*tower_descr,
+                            auto id = objects.add_projectile(tower_descr,
                                                              rect,
                                                              enemy_id);
                             firing_comp.cooldown = firing_comp.interval;

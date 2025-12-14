@@ -21,6 +21,7 @@ Game::Game()
     ,m_current_ticks(0)
     ,m_hud_system()
     ,m_selected_tower(nullptr)
+    ,m_state(GameState::Gameplay)
 {
     init();
 }
@@ -146,9 +147,10 @@ void Game::loop(){
             lastTime = frame_ticks;
             frames = 0;
         }
-
         handle_input();
-        update_game();
+        if(m_state == Gameplay){
+            update_game();
+        }
         draw_output();
         int sleep = 8 - (SDL_GetTicks() - frame_ticks);
         if(sleep > 0){
@@ -220,6 +222,14 @@ void Game::handle_input(){
                 if(m_towers_scancode.count(scancode) > 0){
                     m_selected_tower = &m_towers_scancode[scancode];
                     SDL_Log("Selected Tower %d", m_selected_tower->type);
+                }
+                if(scancode == SDL_SCANCODE_SPACE){
+                    if(m_state == GameState::PauseMenu){
+                        m_state = GameState::Gameplay;
+                    }
+                    else if(m_state == GameState::Gameplay){
+                        m_state = GameState::PauseMenu;
+                    }
                 }
             break;
         }
@@ -531,6 +541,10 @@ void Game::load_hearth(){
             SDL_Log("Health %.1f", it->second);
             EntityID hearth_id = m_objects.get_object(SpriteType::HEARTH);
             m_objects.m_sprites[hearth_id].anim_index = (m_objects.m_sprites[hearth_id].anim_index + 1) % 2;
+            if(it->second <= 0.f){
+                m_running = false;
+                SDL_Log("GAME OVER");
+            }
         }
     });
 

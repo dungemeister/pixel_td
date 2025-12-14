@@ -18,6 +18,7 @@ enum SpriteFlag{
     fSpriteContour   = 1 << 2,
     fSpriteStencil   = 1 << 3,
     fSpriteBorder    = 1 << 4,
+    fSpriteHealthBar = 1 << 5,
 };
 
 enum SpriteLayer{
@@ -128,6 +129,8 @@ enum EntitySystems{
     eSpriteBatchSystem       = 1 << 5,
     eSpriteAnimationSystem   = 1 << 6,
     eFiringSystem            = 1 << 7,
+    eDamageSystem            = 1 << 8,
+    eHealthSystem            = 1 << 9,
 };
 
 struct SpriteComponent
@@ -170,7 +173,9 @@ enum FiringType{
 };
 
 struct HealthComponent{
-    float health;
+    float max_health;
+    float cur_health;
+    float regeneration;
     int alive;
 };
 
@@ -223,7 +228,7 @@ Entities() {
     std::vector<EntityGlobalType>                   m_types;
     std::unordered_map<TowerType, TowerDescription> m_towers_descr;
 
-    EntityID get_empty_id() { return m_empty_id; }
+    EntityID get_empty_id() const { return m_empty_id; }
 
     void reserve(size_t n){
         m_names.reserve(n);
@@ -239,7 +244,7 @@ Entities() {
         m_types.reserve(n);
 
     }
-    size_t size() { return m_names.size(); }
+    size_t size() const { return m_names.size(); }
 
     EntityID add_object(const std::string&& name){
         // SDL_Log("Added %s", name.c_str());
@@ -354,17 +359,40 @@ Entities() {
         m_systems[id] |= eSpriteSystem;
         switch(type){
             case SpriteType::VIKING:
+                m_sprites[id].scale = 0.5;
+                m_health[id].max_health = 10.f;
+                m_health[id].cur_health = m_health[id].max_health;
+                m_health[id].regeneration = 0.05f;
+                m_sprites[id].flag |= fSpriteHealthBar;
+
+            break;
             case SpriteType::BEE:
                 m_sprites[id].scale = 0.5;
+                m_health[id].max_health = 5.f;
+                m_health[id].cur_health = m_health[id].max_health;
+                m_health[id].regeneration = 0.f;
+                m_sprites[id].flag |= fSpriteHealthBar;
             break;
             case SpriteType::DRAGONIT:
                 m_sprites[id].scale = 0.7;
+                m_health[id].max_health = 20.f;
+                m_health[id].cur_health = m_health[id].max_health;
+                m_health[id].regeneration = 0.1f;
+                m_sprites[id].flag |= fSpriteHealthBar;
             break;
             case SpriteType::SERJANT:
                 m_sprites[id].scale = 0.9;
+                m_health[id].max_health = 25.f;
+                m_health[id].cur_health = m_health[id].max_health;
+                m_health[id].regeneration = 0.2f;
+                m_sprites[id].flag |= fSpriteHealthBar;
             break;
             case SpriteType::TANK:
                 m_sprites[id].scale = 1.1;
+                m_health[id].max_health = 40.f;
+                m_health[id].cur_health = m_health[id].max_health;
+                m_health[id].regeneration = 0.5f;
+                m_sprites[id].flag |= fSpriteHealthBar;
             break;
             default:
             SDL_Log("WARNING: Unexpected enemy type %d", type);
@@ -544,7 +572,9 @@ Entities() {
 
         return res;
     }
-    EntityID add_projectile(const TowerDescription& descr, const SDL_FRect& rect, EntityID target_id){
+    EntityID add_projectile(TowerDescription* descr, const SDL_FRect& rect, EntityID target_id){
+        if(!descr) return get_empty_id();
+        
         auto id = add_object("projectile");
 
         m_positions[id].x = rect.x;
@@ -571,10 +601,11 @@ Entities() {
         m_moves[id].target_version = m_versions[target_id];
         m_moves[id].rotation_angle = (m_moves[id].target - Vector2D(rect.x, rect.y)).angle();
         // SDL_Log("Proj angle %f", m_moves[id].rotation_angle);
-        switch(descr.type){
+        switch(descr->type){
             case TowerType::FIRE_TOWER_DATA:
                 m_sprites[id].type = SpriteType::FIRE_PROJECTILE;
                 m_sprites[id].forward = {-1, 1}; //Sprite forward direction;
+
             break;
             case TowerType::ICE_TOWER_DATA:
                 m_sprites[id].type = SpriteType::ICE_PROJECTILE;
@@ -586,8 +617,9 @@ Entities() {
                 m_sprites[id].scale = 1.2;
             break;
         }
-        m_moves[id].speed = descr.projectile_speed;
-        m_systems[id] |= eMoveSystem;
+        m_firings[id].descr = descr;
+        m_moves[id].speed = descr->projectile_speed;
+        m_systems[id] |= eMoveSystem | eDamageSystem;
 
         m_types[id] = EntityGlobalType::PROJECTILE_ENTITY;
 
