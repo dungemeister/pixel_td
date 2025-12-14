@@ -17,8 +17,12 @@ public:
 
 	float dot(const Vector2D& other) { return x * other.x + y * other.y; }
 	float cross(const Vector2D& other) { return x * other.y - y * other.x; }
-	float angleBetween(const Vector2D& other) { return atan2(cross(other), dot(other)); }
+	float angle_between(const Vector2D& other) { return atan2(cross(other), dot(other)); }
 
+	static float radians_to_degrees(float radians) {
+		// Standard Pi constant (may require #define _USE_MATH_DEFINES on some compilers)
+		return radians * (180.0 / M_PI);
+	}
 
 	Vector2D operator+(const float amount) { return Vector2D(x + amount, y + amount); }
 	Vector2D operator-(const float amount) { return Vector2D(x - amount, y - amount); }

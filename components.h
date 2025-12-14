@@ -94,6 +94,7 @@ enum SpriteType{
     TOWER      ,
     ICE_TOWER  ,
     FIRE_TOWER  ,
+    POISON_TOWER,
     //ENTITY LAYER.ENEMIES
     VIKING,
     DRAGONIT,
@@ -107,6 +108,8 @@ enum SpriteType{
     FIRE_AOE,
     ICE_AOE,
     EXPLOSION_AOE,
+    POISON_PROJECTILE,
+    POISON_AOE,
     //EFFECTS LAYER
     HEALTH_BAR,
     //HUD
@@ -138,11 +141,13 @@ struct SpriteComponent
     SpriteLayer layer;
     SpriteType  type;
     int anim_index;
+    Vector2D forward;
 };
 
 enum TowerType{
     FIRE_TOWER_DATA,
     ICE_TOWER_DATA,
+    POISON_TOWER_DATA,
 };
 
 struct MapComponent{
@@ -372,7 +377,6 @@ Entities() {
         m_borders[id].y_max = (spawn_pos.y + tile_size.y / 4);
         // objects.m_flags[id] |= fEntityMapBorder;
 
-        // objects.m_moves[id].speed = RandomFloat(10., 20.);
         m_moves[id].speed = 100.f;
         m_moves[id].targeted = 1;
         m_moves[id].target = target;
@@ -419,31 +423,45 @@ Entities() {
             m_sprites[id].layer = SpriteLayer::ENTITY;
             m_sprites[id].anim_index = -1;
             m_systems[id] |= eSpriteSystem;
+            TowerDescription* tower_descr;
+            switch(type){
+                case TowerType::FIRE_TOWER_DATA:
+                    tower_descr = get_tower_descr(TowerType::FIRE_TOWER_DATA);
+                    m_sprites[id].type = SpriteType::FIRE_TOWER;
+                    m_animations[id].cur_frame = 0.f;
+                    m_animations[id].frames_size = 6;
+                    m_animations[id].fps = 8;
 
-            if(type == TowerType::FIRE_TOWER_DATA){
-                auto tower_descr = get_tower_descr(TowerType::FIRE_TOWER_DATA);
-                m_sprites[id].type = SpriteType::FIRE_TOWER;
-                m_animations[id].cur_frame = 0.f;
-                m_animations[id].frames_size = 6;
-                m_animations[id].fps = 8;
+                    m_firings[id].interval = tower_descr->firing_interval;
+                    m_firings[id].cooldown = m_firings[id].interval;
+                    m_firings[id].descr = tower_descr;
+                    m_firings[id].radius = tower_descr->radius;
+                    m_systems[id] |= eSpriteAnimationSystem | eFiringSystem;
 
-                m_firings[id].interval = tower_descr->firing_interval;
-                m_firings[id].cooldown = m_firings[id].interval;
-                m_firings[id].descr = tower_descr;
-                m_firings[id].radius = tower_descr->radius;
+                break;
+                case TowerType::ICE_TOWER_DATA:
+                    tower_descr = get_tower_descr(TowerType::ICE_TOWER_DATA);
+                    m_sprites[id].type = SpriteType::ICE_TOWER;
+                    m_firings[id].interval = tower_descr->firing_interval;
+                    m_firings[id].cooldown = m_firings[id].interval;
+                    m_firings[id].descr = tower_descr;
+                    m_firings[id].radius = tower_descr->radius;
 
-                m_systems[id] |= eSpriteAnimationSystem | eFiringSystem;
+                    m_systems[id] |= eFiringSystem;
+                break;
+                case TowerType::POISON_TOWER_DATA:
+                    tower_descr = get_tower_descr(TowerType::POISON_TOWER_DATA);
+                    m_sprites[id].type = SpriteType::POISON_TOWER;
+                    m_firings[id].interval = tower_descr->firing_interval;
+                    m_firings[id].cooldown = m_firings[id].interval;
+                    m_firings[id].descr = tower_descr;
+                    m_firings[id].radius = tower_descr->radius;
+
+                    m_systems[id] |= eFiringSystem;
+                break;
             }
-            else if(type == TowerType::ICE_TOWER_DATA){
-                auto tower_descr = get_tower_descr(TowerType::ICE_TOWER_DATA);
-                m_sprites[id].type = SpriteType::ICE_TOWER;
-                m_firings[id].interval = tower_descr->firing_interval;
-                m_firings[id].cooldown = m_firings[id].interval;
-                m_firings[id].descr = tower_descr;
-                m_firings[id].radius = tower_descr->radius;
 
-                m_systems[id] |= eFiringSystem;
-            }
+
             m_types[id] = EntityGlobalType::FRIEND_ENTITY;
 
             level.set_tile_occupied(tile.row, tile.column, 1);
@@ -556,9 +574,16 @@ Entities() {
         switch(descr.type){
             case TowerType::FIRE_TOWER_DATA:
                 m_sprites[id].type = SpriteType::FIRE_PROJECTILE;
+                m_sprites[id].forward = {-1, 1}; //Sprite forward direction;
             break;
             case TowerType::ICE_TOWER_DATA:
                 m_sprites[id].type = SpriteType::ICE_PROJECTILE;
+                m_sprites[id].forward = {-0, -1}; //Sprite forward direction;
+            break;
+            case TowerType::POISON_TOWER_DATA:
+                m_sprites[id].type = SpriteType::POISON_PROJECTILE;
+                m_sprites[id].forward = {1, 0}; //Sprite forward direction;
+                m_sprites[id].scale = 1.2;
             break;
         }
         m_moves[id].speed = descr.projectile_speed;
@@ -615,6 +640,25 @@ Entities() {
                 tower.periodic_time = 0;
                 tower.burst_damage = 2.f;
                 tower.projectile_speed = 250.f;
+                tower.firing_type = FiringType::eProjectile;
+                tower.experience_distribution.emplace(0, 150.f);
+                tower.experience_distribution.emplace(1, 300.f);
+                tower.experience_distribution.emplace(2, 500.f);
+                tower.experience_distribution.emplace(3, 700.f);
+            break;
+            case TowerType::POISON_TOWER_DATA:
+                tower.cost = 7;
+                tower.firing_interval = 1.f;
+                tower.level = 0;
+                tower.radius = 250.f;
+                tower.remove_cost = tower.cost * 0.5f;
+                tower.type = type;
+                tower.slowing_percentage = 10;
+                tower.slowing_time = 1.5f;
+                tower.periodic_damage = 0.5f;
+                tower.periodic_time = 3.f;
+                tower.burst_damage = 3.f;
+                tower.projectile_speed = 350.f;
                 tower.firing_type = FiringType::eProjectile;
                 tower.experience_distribution.emplace(0, 150.f);
                 tower.experience_distribution.emplace(1, 300.f);

@@ -58,7 +58,9 @@ public:
                 Vector2D pos = objects.m_positions[id].get_vector2d();
                 Vector2D diff = objects.m_moves[id].target - pos;
                 Vector2D force = {};
-
+                Vector2D sprite_forward = objects.m_sprites[id].forward;
+                float angle = Vector2D::radians_to_degrees(diff.angle_between(sprite_forward));
+                objects.m_sprites[id].angle = -angle;
                 float distanceToTarget = diff.magnitude();
 
                 //Determine the distance to move this frame.

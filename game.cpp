@@ -96,6 +96,8 @@ void Game::init_game(){
                                                  "assets/fire/fire_tower4.png",
                                                  "assets/fire/fire_tower5.png",
                                                  "assets/fire/fire_tower3.png"});
+    // register_type(SpriteType::POISON_TOWER,      {"assets/poison_tower.png"});
+    register_type(SpriteType::POISON_TOWER,      {"assets/poison1_tower.png"});
     register_type(SpriteType::VIKING,            {"assets/enemies/viking.png"});
     register_type(SpriteType::DRAGONIT,          {"assets/enemies/dragonit.png"});
     register_type(SpriteType::BEE,               {"assets/enemies/bee.png"});
@@ -105,6 +107,7 @@ void Game::init_game(){
     register_type(SpriteType::FIRE_PROJECTILE,       {"assets/fire/fireball.png"});
     register_type(SpriteType::FIRE_AOE,              {});
     register_type(SpriteType::ICE_PROJECTILE,       {"assets/ice_bullet.png"});
+    register_type(SpriteType::POISON_PROJECTILE,    {"assets/poisonous_ball.png"});
 
     register_type(SpriteType::CASTLE_DECOR,     {"assets/statue.bmp"});
     register_type(SpriteType::SPAWNER_DECOR,    {"assets/spawner.bmp"});
@@ -601,4 +604,7 @@ void Game::register_towers(){
 
     auto ice_tower = m_objects.create_tower_descr(TowerType::ICE_TOWER_DATA);
     m_towers_scancode.emplace(SDL_SCANCODE_2, ice_tower);
+
+    auto poison_tower = m_objects.create_tower_descr(TowerType::POISON_TOWER_DATA);
+    m_towers_scancode.emplace(SDL_SCANCODE_3, poison_tower);
 }
