@@ -158,12 +158,12 @@ bool RenderSystem::render_sprite(const SpriteComponent& sprite){
     if(sprite.anim_index != -1 && textures.size()){
         res &= render_sprite_texture(sprite, textures[sprite.anim_index]);
     }
-    else {
+    else if(textures.size() > 0){
         for(const auto& text: textures){
             res &= render_sprite_texture(sprite, text);
         }
     }
-    if(sprite.type == SpriteType::HUD_LAYOUT){
+    else{
         render_rectangle({sprite.posX, sprite.posY, sprite.width, sprite.height},
                         2.f,
                         0.f);

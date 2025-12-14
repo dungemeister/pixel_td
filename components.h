@@ -102,8 +102,11 @@ enum SpriteType{
     TANK,
     TARGET,
     //FIRING LAYER
-    PROJECTILE,
-    AOE,
+    FIRE_PROJECTILE,
+    ICE_PROJECTILE,
+    FIRE_AOE,
+    ICE_AOE,
+    EXPLOSION_AOE,
     //EFFECTS LAYER
     HEALTH_BAR,
     //HUD
@@ -161,13 +164,6 @@ enum FiringType{
     eIntantSpell,
 };
 
-struct FiringComponent{
-    float interval;
-    float cooldown;
-    float radius;
-    FiringType type;
-};
-
 struct HealthComponent{
     float health;
     int alive;
@@ -175,6 +171,30 @@ struct HealthComponent{
 
 struct HudComponent{
 
+};
+
+struct TowerDescription{
+    float cost;
+    float remove_cost;
+    float radius;
+    float firing_interval;
+    TowerType type;
+    int level;
+    float slowing_percentage;
+    float slowing_time;
+    float periodic_damage;
+    float periodic_time;
+    float burst_damage;
+    float projectile_speed;
+    FiringType firing_type;
+    std::unordered_map<int, float> experience_distribution;
+};
+
+struct FiringComponent{
+    float interval;
+    float cooldown;
+    float radius;
+    TowerDescription* descr;
 };
 
 struct Entities{
@@ -185,17 +205,18 @@ Entities() {
     
     EntityID m_empty_id;
 
-    std::vector<std::string>        m_names;
-    std::vector<PositionComponent>  m_positions;
-    std::vector<MoveComponent>      m_moves;
-    std::vector<SpriteComponent>    m_sprites;
-    std::vector<BorderComponent>    m_borders;
-    std::vector<AnimationComponent> m_animations;
-    std::vector<FiringComponent>    m_firings;
-    std::vector<HealthComponent>    m_health;
-    std::vector<VersionComponent>   m_versions;
-    std::vector<EntitySystems_t>    m_systems;
-    std::vector<EntityGlobalType>   m_types;
+    std::vector<std::string>                        m_names;
+    std::vector<PositionComponent>                  m_positions;
+    std::vector<MoveComponent>                      m_moves;
+    std::vector<SpriteComponent>                    m_sprites;
+    std::vector<BorderComponent>                    m_borders;
+    std::vector<AnimationComponent>                 m_animations;
+    std::vector<FiringComponent>                    m_firings;
+    std::vector<HealthComponent>                    m_health;
+    std::vector<VersionComponent>                   m_versions;
+    std::vector<EntitySystems_t>                    m_systems;
+    std::vector<EntityGlobalType>                   m_types;
+    std::unordered_map<TowerType, TowerDescription> m_towers_descr;
 
     EntityID get_empty_id() { return m_empty_id; }
 
@@ -373,7 +394,7 @@ Entities() {
         return size;
     }
     
-    EntityID add_tower(Level& level, SpriteType type, const Vector2D& pos){
+    EntityID add_tower(Level& level, TowerType type, const Vector2D& pos){
         auto tile_opt = level.get_tile(pos.get_sdl_point());
         if(!level.is_road_tile(pos.get_sdl_point()) && tile_opt.has_value())
         {
@@ -396,21 +417,32 @@ Entities() {
             m_sprites[id].angle = 0;
             m_sprites[id].flag = fUpperLeftSprite;
             m_sprites[id].layer = SpriteLayer::ENTITY;
-            m_sprites[id].type = type;
             m_sprites[id].anim_index = -1;
             m_systems[id] |= eSpriteSystem;
 
-            if(type == SpriteType::FIRE_TOWER){
+            if(type == TowerType::FIRE_TOWER_DATA){
+                auto tower_descr = get_tower_descr(TowerType::FIRE_TOWER_DATA);
+                m_sprites[id].type = SpriteType::FIRE_TOWER;
                 m_animations[id].cur_frame = 0.f;
                 m_animations[id].frames_size = 6;
                 m_animations[id].fps = 8;
 
-                m_firings[id].interval = 1.f;
+                m_firings[id].interval = tower_descr->firing_interval;
                 m_firings[id].cooldown = m_firings[id].interval;
-                m_firings[id].type = FiringType::eProjectile;
-                m_firings[id].radius = 150.f;
+                m_firings[id].descr = tower_descr;
+                m_firings[id].radius = tower_descr->radius;
 
                 m_systems[id] |= eSpriteAnimationSystem | eFiringSystem;
+            }
+            else if(type == TowerType::ICE_TOWER_DATA){
+                auto tower_descr = get_tower_descr(TowerType::ICE_TOWER_DATA);
+                m_sprites[id].type = SpriteType::ICE_TOWER;
+                m_firings[id].interval = tower_descr->firing_interval;
+                m_firings[id].cooldown = m_firings[id].interval;
+                m_firings[id].descr = tower_descr;
+                m_firings[id].radius = tower_descr->radius;
+
+                m_systems[id] |= eFiringSystem;
             }
             m_types[id] = EntityGlobalType::FRIEND_ENTITY;
 
@@ -494,7 +526,7 @@ Entities() {
 
         return res;
     }
-    EntityID add_projectile(FiringType type, const SDL_FRect& rect, EntityID target_id){
+    EntityID add_projectile(const TowerDescription& descr, const SDL_FRect& rect, EntityID target_id){
         auto id = add_object("projectile");
 
         m_positions[id].x = rect.x;
@@ -512,7 +544,6 @@ Entities() {
         m_sprites[id].angle = 0;
         m_sprites[id].flag = fCenterSprite;
         m_sprites[id].layer = SpriteLayer::PROJECTILES;
-        m_sprites[id].type = SpriteType::PROJECTILE;
         m_sprites[id].anim_index = -1;
         m_systems[id] |= eSpriteSystem;
 
@@ -522,7 +553,15 @@ Entities() {
         m_moves[id].target_version = m_versions[target_id];
         m_moves[id].rotation_angle = (m_moves[id].target - Vector2D(rect.x, rect.y)).angle();
         // SDL_Log("Proj angle %f", m_moves[id].rotation_angle);
-        m_moves[id].speed = 200.f;
+        switch(descr.type){
+            case TowerType::FIRE_TOWER_DATA:
+                m_sprites[id].type = SpriteType::FIRE_PROJECTILE;
+            break;
+            case TowerType::ICE_TOWER_DATA:
+                m_sprites[id].type = SpriteType::ICE_PROJECTILE;
+            break;
+        }
+        m_moves[id].speed = descr.projectile_speed;
         m_systems[id] |= eMoveSystem;
 
         m_types[id] = EntityGlobalType::PROJECTILE_ENTITY;
@@ -539,6 +578,61 @@ Entities() {
 
         }
         return get_empty_id();
+    }
+
+    TowerDescription create_tower_descr(TowerType type){
+        TowerDescription tower;
+        switch(type){
+            case TowerType::FIRE_TOWER_DATA:
+                tower.cost = 10;
+                tower.firing_interval = 2.f;
+                tower.level = 0;
+                tower.radius = 150.f;
+                tower.remove_cost = tower.cost * 0.5f;
+                tower.type = type;
+                tower.slowing_percentage = 0;
+                tower.slowing_time = 0;
+                tower.periodic_damage = 1.f;
+                tower.periodic_time = 3.f;
+                tower.burst_damage = 5.f;
+                tower.projectile_speed = 200.f;
+                tower.firing_type = FiringType::eProjectile;
+                tower.experience_distribution.emplace(0, 100.f);
+                tower.experience_distribution.emplace(1, 200.f);
+                tower.experience_distribution.emplace(2, 400.f);
+                tower.experience_distribution.emplace(3, 700.f);
+            break;
+            case TowerType::ICE_TOWER_DATA:
+                tower.cost = 5;
+                tower.firing_interval = 1.f;
+                tower.level = 0;
+                tower.radius = 250.f;
+                tower.remove_cost = tower.cost * 0.5f;
+                tower.type = type;
+                tower.slowing_percentage = 20;
+                tower.slowing_time = 3.f;
+                tower.periodic_damage = 0;
+                tower.periodic_time = 0;
+                tower.burst_damage = 2.f;
+                tower.projectile_speed = 250.f;
+                tower.firing_type = FiringType::eProjectile;
+                tower.experience_distribution.emplace(0, 150.f);
+                tower.experience_distribution.emplace(1, 300.f);
+                tower.experience_distribution.emplace(2, 500.f);
+                tower.experience_distribution.emplace(3, 700.f);
+            break;
+        }
+        m_towers_descr.emplace(type, tower);
+
+        return tower;
+    }
+
+    TowerDescription* get_tower_descr(TowerType type){
+        auto it = m_towers_descr.find(type);
+        if(it != m_towers_descr.end()){
+            return &it->second;
+        }
+        return nullptr;
     }
 };
 

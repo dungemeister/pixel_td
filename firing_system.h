@@ -14,7 +14,7 @@ struct FiringSystem{
             PositionComponent& pos_comp = objects.m_positions[id];
             firing_comp.cooldown -= deltatime;
             if(firing_comp.cooldown <= 0){
-                switch(firing_comp.type){
+                switch(firing_comp.descr->firing_type){
                     case FiringType::eProjectile:
                         auto tile_opt = level.get_tile(objects.m_positions[id].get_sdl_fpoint());
                         if(!tile_opt.has_value()) continue;
@@ -32,7 +32,8 @@ struct FiringSystem{
                                               tile.center_pos.y,
                                               tile_size.x * rect_scale,
                                               tile_size.y * rect_scale};
-                            auto id = objects.add_projectile(FiringType::eProjectile,
+                            auto tower_descr = objects.get_tower_descr(firing_comp.descr->type);
+                            auto id = objects.add_projectile(*tower_descr,
                                                              rect,
                                                              enemy_id);
                             firing_comp.cooldown = firing_comp.interval;
@@ -46,5 +47,5 @@ struct FiringSystem{
             }
         }
     }
-    
+
 };

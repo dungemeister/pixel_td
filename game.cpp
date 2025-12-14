@@ -20,6 +20,7 @@ Game::Game()
     ,m_spawn_system()
     ,m_current_ticks(0)
     ,m_hud_system()
+    ,m_selected_tower(nullptr)
 {
     init();
 }
@@ -101,8 +102,9 @@ void Game::init_game(){
     register_type(SpriteType::SERJANT,           {"assets/enemies/serjant.png"});
     register_type(SpriteType::TANK,              {"assets/enemies/tank.png"});
     
-    register_type(SpriteType::PROJECTILE,       {"assets/fire/fireball.png"});
-    register_type(SpriteType::AOE,              {});
+    register_type(SpriteType::FIRE_PROJECTILE,       {"assets/fire/fireball.png"});
+    register_type(SpriteType::FIRE_AOE,              {});
+    register_type(SpriteType::ICE_PROJECTILE,       {"assets/ice_bullet.png"});
 
     register_type(SpriteType::CASTLE_DECOR,     {"assets/statue.bmp"});
     register_type(SpriteType::SPAWNER_DECOR,    {"assets/spawner.bmp"});
@@ -115,6 +117,8 @@ void Game::init_game(){
     register_type(SpriteType::HUD_LAYOUT,       {});
     register_type(SpriteType::HEARTH,           {"assets/hearth.png", "assets/broken_hearth.png"});
     register_type(SpriteType::COINS,            {"assets/coins.png"});
+
+    register_towers();
 
     load_level_tiles();
     load_decorations();
@@ -157,14 +161,16 @@ void Game::handle_mouse_event(Entities& objects, const SDL_MouseButtonEvent& mou
     if(mouse_event.button == SDL_BUTTON_LEFT){
         if(m_cur_level.is_occupied(mouse_vec)) return;
 
-        if(m_components_data[ComponentType::PLAYER_GOLD] > 0){
-            
-            if(objects.add_tower(m_cur_level, SpriteType::FIRE_TOWER, mouse_vec) > 0){
+        if(m_components_data[ComponentType::PLAYER_GOLD] > 0 &&
+           m_selected_tower != nullptr){
+
+            if(objects.add_tower(m_cur_level, m_selected_tower->type, mouse_vec) > 0){
                 std::cout << "Added tower to tile (" << mouse_pos.x << ", "
                                                         << mouse_pos.y <<
                                                     ")" << std::endl;
                 auto callback = m_components_callbacks[ComponentType::PLAYER_GOLD];
-                callback(10.f);
+                callback(m_selected_tower->cost);
+                m_selected_tower = nullptr;
             }
             else{
                 std::cout << "Cannot add tower to " << mouse_event.x << " " << mouse_event.y <<
@@ -205,6 +211,13 @@ void Game::handle_input(){
             break;
             case SDL_EVENT_MOUSE_BUTTON_UP:
                 handle_mouse_event(m_objects, event.button);
+            break;
+            case SDL_EVENT_KEY_DOWN:
+                auto scancode = event.key.scancode;
+                if(m_towers_scancode.count(scancode) > 0){
+                    m_selected_tower = &m_towers_scancode[scancode];
+                    SDL_Log("Selected Tower %d", m_selected_tower->type);
+                }
             break;
         }
     }
@@ -460,9 +473,9 @@ void Game::load_decor_random_sprites(SpriteType type, size_t size){
 }
 
 void Game::load_towers(){
-    auto id = m_objects.add_tower(m_cur_level, SpriteType::ICE_TOWER, {761.657, 382.826});
-    id = m_objects.add_tower(m_cur_level, SpriteType::FIRE_TOWER, {942.076, 378.737});
-    id = m_objects.add_tower(m_cur_level, SpriteType::FIRE_TOWER, {615.781, 267.516});
+    auto id = m_objects.add_tower(m_cur_level, TowerType::FIRE_TOWER_DATA, {761.657, 382.826});
+    id = m_objects.add_tower(m_cur_level, TowerType::ICE_TOWER_DATA, {942.076, 378.737});
+    id = m_objects.add_tower(m_cur_level, TowerType::FIRE_TOWER_DATA, {615.781, 267.516});
 }
 
 void Game::register_type(SpriteType type, const std::vector<std::string>& textures){
@@ -579,4 +592,13 @@ void Game::load_coins(){
     m_objects.m_sprites[id].anim_index = 0;
     m_objects.m_systems[id] |= eSpriteSystem;
     m_objects.m_types[id] = EntityGlobalType::HUD_ENTITY;
+}
+
+void Game::register_towers(){
+
+    auto fire_tower = m_objects.create_tower_descr(TowerType::FIRE_TOWER_DATA);
+    m_towers_scancode.emplace(SDL_SCANCODE_1, fire_tower);
+
+    auto ice_tower = m_objects.create_tower_descr(TowerType::ICE_TOWER_DATA);
+    m_towers_scancode.emplace(SDL_SCANCODE_2, ice_tower);
 }

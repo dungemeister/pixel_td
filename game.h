@@ -41,6 +41,9 @@ private:
     Level              m_cur_level;
 
     Uint64 m_current_ticks;
+    
+    TowerDescription* m_selected_tower;
+    std::unordered_map<SDL_Scancode, TowerDescription> m_towers_scancode;
 
     std::unordered_map<ComponentType, float> m_components_data;
     std::unordered_map<ComponentType, std::function<void(float)>> m_components_callbacks;
@@ -67,4 +70,5 @@ private:
     void register_type(SpriteType type, const std::vector<std::string>& textures);
 
     void update_castle_health(float value);
+    void register_towers();
 };
