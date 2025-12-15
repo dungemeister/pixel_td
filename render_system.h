@@ -68,7 +68,7 @@ private:
     bool render_sprite_texture(const SpriteComponent& sprite, SDL_Texture* text);
     size_t get_type_sprites_size(SpriteType type);
     void render_rectangle(SDL_FRect rect, float width, float angle, bool filled);
-    bool render_bar(SDL_FRect rect, float angle, float percentage);
+    bool render_bar(SDL_FRect rect, float angle, float percentage, float height_scale);
     bool render_health_bar(const SpriteComponent& sprite, const HealthComponent& health);
 
     std::vector<std::pair<std::string, SDL_FRect>> m_brushes_src;

@@ -12,13 +12,19 @@ set(SOURCES main.cpp
             render_system.cpp
             level.cpp
             spawn_system.cpp
+            ui/ui_layout.cpp
+            ui/ui_widget.cpp
+            ui/ui_text.cpp
+            ui/ui_image.cpp
 )
+
+set(INCLUDE_DIRS ui)
 
 find_package(SDL3 REQUIRED CONFIG REQUIRED COMPONENTS SDL3-shared)
 find_package(SDL3_image REQUIRED)
 find_package(SDL3_ttf REQUIRED)
 
 add_executable(${PROJECT_NAME} ${SOURCES})
-target_include_directories(${PROJECT_NAME} PRIVATE ${CMAKE_SOURCE_DIR})
+target_include_directories(${PROJECT_NAME} PRIVATE ${CMAKE_SOURCE_DIR} ${INCLUDE_DIRS})
 target_link_libraries(${PROJECT_NAME} PRIVATE m)
 target_link_libraries(${PROJECT_NAME} PRIVATE SDL3_image::SDL3_image SDL3_ttf::SDL3_ttf SDL3::SDL3)

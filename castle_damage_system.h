@@ -2,10 +2,11 @@
 #include "components.h"
 #include "level.h"
 #include <functional>
+#include "hud_system.h"
 
 class CastleDamageSystem{
 public:
-    void update(Entities& objects, Level& level, float deltatime, std::function<void(float)>callback){
+    void update(Entities& objects, Level& level, float deltatime, std::unordered_map<ComponentType, std::function<void(float)>> callbacks){
         for(int id = 0, n = objects.size(); id < n; id++){
             if(objects.m_types[id] == EntityGlobalType::ENEMY_ENTITY){
 
@@ -13,8 +14,9 @@ public:
                 if(level.is_pos_in_castle(pos)){
                     std::cout << "Enemy " << id << " damaged castle" << std::endl;
                     objects.reset_object(id);
-
-                    callback(10.f);
+                    auto health_cb = callbacks.find(ComponentType::CASTLE_HEALTH);
+                    if(health_cb != callbacks.end())
+                        health_cb->second(10.f);
                     
                 }
             }

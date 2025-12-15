@@ -11,6 +11,10 @@ enum ComponentType{
 };
 
 struct GuiComponent{
+    GuiComponent()
+    :horiz_padding(5.f)
+    ,vert_padding(5.f) {}
+
     Vector2D pos;
 
     int start_row;
@@ -22,9 +26,17 @@ struct GuiComponent{
     float tile_width;
     float tile_height;
 
+    float horiz_padding;
+    float vert_padding;
 
-    SDL_FRect get_size() { return {pos.x, pos.y, rows * tile_height, columns * tile_width}; }
+    SDL_FRect get_size() { return {pos.x, pos.y, columns * tile_width, rows * tile_height}; }
+    SDL_FRect get_size_padded() { return {pos.x + horiz_padding,
+                                          pos.y + vert_padding,
+                                          columns * tile_width - 2 * horiz_padding,
+                                          rows * tile_height - 2 * vert_padding}; }
     void update(float deltatime) {}
+
+    // sprite string bar button
 };
 
 enum LayerAlignment{
@@ -53,15 +65,15 @@ struct LayerComponent{
     //     children.emplace_back(rect, rows, columns, this);
     // }
 
-    GuiComponent add_component(int row, int column){
+    GuiComponent add_component(int row, int column, int rows, int columns){
         GuiComponent comp;
         comp.start_row    = row;
         comp.start_column = column;
-        comp.rows    = 1;
-        comp.columns = 1;
+        comp.rows    = rows;
+        comp.columns = columns;
         comp.tile_width  = grid_width;
         comp.tile_height = grid_height;
-        comp.pos = {comp.start_column * grid_width, comp.start_row * grid_height}; 
+        comp.pos = {pos.x + comp.start_column * grid_width, pos.y + comp.start_row * grid_height}; 
 
         components.push_back(comp);
         return comp;

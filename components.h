@@ -9,6 +9,7 @@
 #include <unordered_map>
 #include "vector2d.h"
 #include "level.h"
+#include <variant>
 
 typedef size_t EntityID;
 
@@ -22,11 +23,16 @@ enum SpriteFlag{
 };
 
 enum SpriteLayer{
+    //GamePlay layers
     BACKGROUND,
     DECORATION,
     ENTITY,
     PROJECTILES,
     HUD,
+    //Menu layers
+    PAUSE_MENU,
+    SETTINGS,
+    MAIN_MENU,
 };
 
 struct PositionComponent{
@@ -115,8 +121,11 @@ enum SpriteType{
     HEALTH_BAR,
     //HUD
     HUD_LAYOUT,
-    HEARTH,
-    COINS,
+    HUD_HEARTH,
+    HUD_COINS,
+    HUD_PLAYER_GOLD,
+    HUD_HEALTH_BAR,
+    HUD_TEXT,
 };
 
 typedef int EntitySystems_t;
@@ -135,16 +144,18 @@ enum EntitySystems{
 
 struct SpriteComponent
 {
-    float posX, posY;
-    float width, height;
-    float scale;
-    float colR, colG, colB;
-    float angle;
-    int flag;
-    SpriteLayer layer;
-    SpriteType  type;
-    int anim_index;
-    Vector2D forward;
+
+    float posX, posY; //Position
+    float width, height; //Size
+    float scale; //Width & height scale coef
+    float colR, colG, colB; //Color blending
+    float angle; //rotation angle
+    int flag; //Sprite flag
+    SpriteLayer layer; //Drawing layer
+    SpriteType  type;  //One of the registered sprite types
+    int anim_index;    //For animated sprite index of current texture
+    Vector2D forward;  //Forward vector of the sprite for rotation calculation 
+    std::variant<int, float, std::string> value; //Some value for handling
 };
 
 enum TowerType{
@@ -177,10 +188,6 @@ struct HealthComponent{
     float cur_health;
     float regeneration;
     int alive;
-};
-
-struct HudComponent{
-
 };
 
 struct TowerDescription{

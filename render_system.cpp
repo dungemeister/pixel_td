@@ -425,9 +425,9 @@ void RenderSystem::render_rectangle(SDL_FRect dest_rect, float width, float angl
     SDL_DestroyTexture(border_text);
 }
 
-bool RenderSystem::render_bar(SDL_FRect rect, float angle, float percentage){
-    SDL_FRect border_rect = {rect.x, rect.y, rect.w, rect.h * 0.1f};
-    SDL_FRect filled_rect = {rect.x, rect.y, rect.w * percentage, rect.h * 0.1f};
+bool RenderSystem::render_bar(SDL_FRect rect, float angle, float percentage, float height_scale=0.1f){
+    SDL_FRect border_rect = {rect.x, rect.y, rect.w, rect.h * height_scale};
+    SDL_FRect filled_rect = {rect.x, rect.y, rect.w * percentage, rect.h * height_scale};
     render_rectangle(border_rect, 2.f, angle, false);
     render_rectangle(filled_rect, 2.f, angle, true);
 

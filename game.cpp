@@ -19,16 +19,24 @@ Game::Game()
     ,m_height(9 * 120)
     ,m_spawn_system()
     ,m_current_ticks(0)
-    ,m_hud_system()
     ,m_selected_tower(nullptr)
     ,m_state(GameState::Gameplay)
+    ,m_pause_menu()
+    ,m_running(1)
+    ,m_info_font(nullptr)
+    ,m_player_gold_text(nullptr)
 {
     init();
 }
 
 void Game::init(){
     init_render_system();
+    init_pause_menu();
     init_game();
+}
+
+void Game::init_pause_menu(){
+
 }
 
 void Game::load_cursor(){
@@ -63,6 +71,17 @@ void Game::load_cursor(){
 void Game::init_render_system(){
     int res = SDL_Init(SDL_INIT_VIDEO | SDL_INIT_AUDIO);
     assert(res != 0);
+    res = TTF_Init();
+    if(!res){
+        SDL_Log("%s", SDL_GetError());
+        assert(res != 0);
+    }
+
+    m_info_font = TTF_OpenFont("/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf", m_hud_font_size);
+    if(!m_info_font){
+        SDL_Log("%s", SDL_GetError());
+        assert(m_info_font != nullptr);
+    }
 
     m_window = SDL_CreateWindow("Anime TD", m_width, m_height, SDL_WINDOW_OPENGL | SDL_WINDOW_RESIZABLE);
     m_render_system = new RenderSystem(m_window);
@@ -118,10 +137,13 @@ void Game::init_game(){
 
     register_type(SpriteType::HEALTH_BAR,       {});
     
-    register_type(SpriteType::HUD_LAYOUT,       {});
-    register_type(SpriteType::HEARTH,           {"assets/hearth.png", "assets/broken_hearth.png"});
-    register_type(SpriteType::COINS,            {"assets/coins.png"});
-
+    register_type(SpriteType::HUD_LAYOUT,           {});
+    register_type(SpriteType::HUD_HEARTH,           {"assets/hearth.png", "assets/broken_hearth.png"});
+    register_type(SpriteType::HUD_COINS,            {"assets/coins.png"});
+    register_type(SpriteType::HUD_HEALTH_BAR,       {});
+    register_type(SpriteType::HUD_PLAYER_GOLD,      {});
+    register_type(SpriteType::HUD_TEXT,             {});
+    
     register_towers();
 
     load_level_tiles();
@@ -148,10 +170,8 @@ void Game::loop(){
             frames = 0;
         }
         handle_input();
-        if(m_state == Gameplay){
-            update_game();
-        }
-        draw_output();
+        handle_update();
+        handle_draw();
         int sleep = 8 - (SDL_GetTicks() - frame_ticks);
         if(sleep > 0){
             SDL_Delay(sleep); // Ограничивает ~120 FPS
@@ -244,21 +264,29 @@ void Game::update_game(){
     m_firing_system.update(m_objects, m_cur_level, deltatime);
     m_move_system.update(m_objects, m_cur_level, deltatime);
     m_enemy_collision_system.update(m_objects, m_cur_level, deltatime);
-    m_castle_damage_system.update(m_objects, m_cur_level, deltatime, m_components_callbacks.at(CASTLE_HEALTH));
+    m_castle_damage_system.update(m_objects, m_cur_level, deltatime, m_components_callbacks);
     m_animation_system.update(m_objects, deltatime);
-    m_hud_system.update(deltatime);
-    // m_render_system->clean_batch_frame();
-    // m_render_system->clean_frame();
     
 }
 
-void Game::draw_output(){
+void Game::handle_draw(){
     auto r = SDL_GetRenderer(m_window);
     SdlWrapper::W_SDL_SetRenderDrawColor(r, {0x18, 0x18, 0x18, 0xFF});
     SDL_RenderClear(r);
 
     // m_render_system->render_batch();
-    m_render_system->render(m_objects);
+    switch(m_state){
+        case Game::Gameplay:
+            m_render_system->render(m_objects);
+        break;
+        case Game::PauseMenu:
+            m_render_system->render(m_pause_menu_objects);
+        break;
+    }
+    
+    for(auto& layout: m_ui_layouts){
+        layout->draw();
+    }
     // TextureTest::test_texture_rendering(r, "assets/rocket_tower.png");
     SDL_Color cursor_circle_color = {0xF7, 0x62, 0x18, 0x80};
     bool res = Circle::render_circle_filled(r, m_cursor_pos.x, m_cursor_pos.y, 100, cursor_circle_color);
@@ -498,117 +526,40 @@ void Game::register_type(SpriteType type, const std::vector<std::string>& textur
 }
 
 void Game::load_hud(){
-    m_hud_system = HudSystem({0, 0}, (m_width - m_cur_level.get_size().x) / 2, m_height);
-    m_hud_system.m_hud_layer.set_grid(15, 2);
-    
-    load_layout();
-    load_hearth();
-    load_coins();
+
+    load_hud_layout();
+    load_hearth_callback();
+    load_gold_callback();
 }
 
-void Game::load_layout(){
-    auto id = m_objects.add_object("hud_layout");
-    Vector2D pos = m_hud_system.m_hud_layer.pos;
-
-    m_objects.m_positions[id].angle = 0;
-    m_objects.m_positions[id].x = pos.x;
-    m_objects.m_positions[id].y = pos.y;
-    m_objects.m_systems[id] |= ePositionSystem;
-
-    m_objects.m_sprites[id].posX = pos.x;
-    m_objects.m_sprites[id].posY = pos.y;
-    m_objects.m_sprites[id].width = m_hud_system.m_hud_layer.rect.w;
-    m_objects.m_sprites[id].height = m_hud_system.m_hud_layer.rect.h;
-    m_objects.m_sprites[id].scale = 1;
-    m_objects.m_sprites[id].colR = 0.6;
-    m_objects.m_sprites[id].colG = 0.6;
-    m_objects.m_sprites[id].colB = 0.6;
-    m_objects.m_sprites[id].angle = 0;
-    m_objects.m_sprites[id].flag = fUpperLeftSprite;
-    m_objects.m_sprites[id].layer = SpriteLayer::HUD;
-    m_objects.m_sprites[id].type = SpriteType::HUD_LAYOUT;
-    m_objects.m_sprites[id].anim_index = 0;
-    m_objects.m_systems[id] |= eSpriteSystem;
-    m_objects.m_types[id] = EntityGlobalType::HUD_ENTITY;
-}
-
-void Game::load_hearth(){
-    m_components_data.emplace(ComponentType::CASTLE_HEALTH, 100.f);
+void Game::load_hearth_callback(){
+    m_components_data.emplace(ComponentType::CASTLE_HEALTH, m_castle_health);
     m_components_callbacks.emplace(ComponentType::CASTLE_HEALTH, [this](float value){
         auto it = m_components_data.find(ComponentType::CASTLE_HEALTH);
         if(it != m_components_data.end()){
             it->second -= value;
             SDL_Log("Health %.1f", it->second);
-            EntityID hearth_id = m_objects.get_object(SpriteType::HEARTH);
-            m_objects.m_sprites[hearth_id].anim_index = (m_objects.m_sprites[hearth_id].anim_index + 1) % 2;
+            
+            m_castle_health_text->SetText(std::to_string(static_cast<int>(it->second)));
             if(it->second <= 0.f){
                 m_running = false;
+                
                 SDL_Log("GAME OVER");
             }
         }
     });
-
-    auto id = m_objects.add_object("hud_hearth");
-    auto grid = m_hud_system.m_hud_layer.get_grid();
-    auto component = m_hud_system.m_hud_layer.add_component(grid.first - 1, 0);
-
-    m_objects.m_positions[id].angle = 0;
-    m_objects.m_positions[id].x = component.pos.x;
-    m_objects.m_positions[id].y = component.pos.y;
-    m_objects.m_systems[id] |= ePositionSystem;
-
-    m_objects.m_sprites[id].posX = component.pos.x;
-    m_objects.m_sprites[id].posY = component.pos.y;
-    m_objects.m_sprites[id].width = 64;
-    m_objects.m_sprites[id].height = 64;
-    m_objects.m_sprites[id].scale = 1;
-    m_objects.m_sprites[id].colR = 0.6;
-    m_objects.m_sprites[id].colG = 0.6;
-    m_objects.m_sprites[id].colB = 0.6;
-    m_objects.m_sprites[id].angle = 0;
-    m_objects.m_sprites[id].flag = fUpperLeftSprite;
-    m_objects.m_sprites[id].layer = SpriteLayer::HUD;
-    m_objects.m_sprites[id].type = SpriteType::HEARTH;
-    m_objects.m_sprites[id].anim_index = 0;
-    m_objects.m_systems[id] |= eSpriteSystem;
-    m_objects.m_types[id] = EntityGlobalType::HUD_ENTITY;
-
 }
 
-void Game::load_coins(){
-    m_components_data.emplace(ComponentType::PLAYER_GOLD, 100.f);
+void Game::load_gold_callback(){
+    m_components_data.emplace(ComponentType::PLAYER_GOLD, m_player_gold);
     m_components_callbacks.emplace(ComponentType::PLAYER_GOLD, [this](float value){
         auto it = m_components_data.find(ComponentType::PLAYER_GOLD);
         if(it != m_components_data.end()){
             it->second -= value;
             SDL_Log("Gold %.1f", it->second);
+            m_player_gold_text->SetText(std::to_string(static_cast<int>(it->second)));
         }
     });
-
-    auto id = m_objects.add_object("hud_coins");
-    auto grid = m_hud_system.m_hud_layer.get_grid();
-    auto component = m_hud_system.m_hud_layer.add_component(grid.first - 2, 0);
-
-    m_objects.m_positions[id].angle = 0;
-    m_objects.m_positions[id].x = component.pos.x;
-    m_objects.m_positions[id].y = component.pos.y;
-    m_objects.m_systems[id] |= ePositionSystem;
-
-    m_objects.m_sprites[id].posX = component.pos.x;
-    m_objects.m_sprites[id].posY = component.pos.y;
-    m_objects.m_sprites[id].width = 64;
-    m_objects.m_sprites[id].height = 64;
-    m_objects.m_sprites[id].scale = 1;
-    m_objects.m_sprites[id].colR = 0.6;
-    m_objects.m_sprites[id].colG = 0.6;
-    m_objects.m_sprites[id].colB = 0.6;
-    m_objects.m_sprites[id].angle = 0;
-    m_objects.m_sprites[id].flag = fUpperLeftSprite;
-    m_objects.m_sprites[id].layer = SpriteLayer::HUD;
-    m_objects.m_sprites[id].type = SpriteType::COINS;
-    m_objects.m_sprites[id].anim_index = 0;
-    m_objects.m_systems[id] |= eSpriteSystem;
-    m_objects.m_types[id] = EntityGlobalType::HUD_ENTITY;
 }
 
 void Game::register_towers(){
@@ -621,4 +572,38 @@ void Game::register_towers(){
 
     auto poison_tower = m_objects.create_tower_descr(TowerType::POISON_TOWER_DATA);
     m_towers_scancode.emplace(SDL_SCANCODE_3, poison_tower);
+}
+
+void Game::handle_update(){
+    switch(m_state){
+        case GameState::Gameplay:
+            update_game();
+        break;
+        case GameState::PauseMenu:
+
+        break;
+    }
+}
+
+void Game::load_hud_layout(){
+    auto level_pos = m_cur_level.get_position();
+    SDL_FRect rect = {0, 0, 0, 0};
+
+    UILayout* health_layout = new UILayout(this, SDL_GetRenderer(m_window), rect);
+    UIImage* heart_image = new UIImage("assets/heart.png", health_layout, SDL_GetRenderer(m_window));
+    heart_image->SetDestSize({64, 64});
+    m_castle_health_text = new UIText(std::to_string(static_cast<int>(m_castle_health)), health_layout);
+    m_castle_health_text->SetFontSize(44);
+    health_layout->PushBackWidgetHorizontal(heart_image);
+    health_layout->PushBackWidgetHorizontal(m_castle_health_text);
+    
+    rect.y = health_layout->GetRect().h;
+    UILayout* gold_layout = new UILayout(this, SDL_GetRenderer(m_window), rect);
+    UIImage* gold_image = new UIImage("assets/coins.png", gold_layout, SDL_GetRenderer(m_window));
+    gold_image->SetDestSize({64, 64});
+    m_player_gold_text = new UIText(std::to_string(static_cast<int>(m_player_gold)), gold_layout);
+    m_player_gold_text->SetFontSize(44);
+    gold_layout->PushBackWidgetHorizontal(gold_image);
+    gold_layout->PushBackWidgetHorizontal(m_player_gold_text);
+
 }
