@@ -307,7 +307,7 @@ void Game::handle_draw(){
     char fps_str[256];
     sprintf(fps_str, "FPS: %.2f", fps);
     SDL_SetRenderDrawColor(r, 255, 0, 0, 255);
-    SDL_RenderDebugText(r, 0, 20, fps_str);
+    SDL_RenderDebugText(r, m_width - strlen(fps_str) * 8, 20, fps_str);
     SDL_RenderPresent(SDL_GetRenderer(m_window));
 }
 
