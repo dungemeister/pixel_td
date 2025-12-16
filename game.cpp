@@ -25,6 +25,7 @@ Game::Game()
     ,m_running(1)
     ,m_info_font(nullptr)
     ,m_player_gold_text(nullptr)
+    ,m_slider(nullptr)
 {
     init();
 }
@@ -320,6 +321,7 @@ void Game::resize_callback(){
     auto columns = res.second;
 
     // int tile_width  = (m_width - 16*10) / res.second;
+
     // int tile_height = (m_height - 9*10) / res.first;
     // for(size_t i = 0; i < s_objects.size(); i++){
     //     s_objects.m_sprites[i].width = tile_width;
@@ -556,6 +558,7 @@ void Game::load_hearth_callback(){
             SDL_Log("Health %.1f", it->second);
             
             m_castle_health_text->SetText(std::to_string(static_cast<int>(it->second)));
+            m_slider->set_value(it->second);
             if(it->second <= 0.f){
                 m_running = false;
                 
@@ -628,6 +631,13 @@ void Game::load_hud_layout(){
     m_castle_health_text->SetFontSize(44);
     health_layout->PushBackWidgetHorizontal(heart_image);
     health_layout->PushBackWidgetHorizontal(m_castle_health_text);
+    m_slider = new UISlider(health_layout);
+    m_slider->set_range(0.f, m_max_castle_health);
+    m_slider->set_value(m_castle_health);
+    m_slider->SetSize({health_layout->GetRect().w,
+                     health_layout->GetRect().y + 10,
+                     100,
+                     32});
     
     rect.y = health_layout->GetRect().h;
     UILayout* gold_layout = new UILayout(this, SDL_GetRenderer(m_window), rect);
@@ -637,5 +647,6 @@ void Game::load_hud_layout(){
     m_player_gold_text->SetFontSize(44);
     gold_layout->PushBackWidgetHorizontal(gold_image);
     gold_layout->PushBackWidgetHorizontal(m_player_gold_text);
+
 
 }

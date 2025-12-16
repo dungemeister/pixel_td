@@ -17,6 +17,7 @@
 #include "ui_layout.h"
 #include "ui_text.h"
 #include "ui_image.h"
+#include "ui_slider.h"
 
 class Game{
 public:
@@ -68,6 +69,7 @@ private:
 
     UIText* m_player_gold_text;
     UIText* m_castle_health_text;
+    UISlider* m_slider;
     std::vector<UILayout*> m_ui_layouts;
 
     TowerDescription* m_selected_tower;
