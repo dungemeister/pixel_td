@@ -399,7 +399,7 @@ Entities() {
         m_sprites[id].colG = 0.6;
         m_sprites[id].colB = 0.6;
         m_sprites[id].angle = 0;
-        m_sprites[id].flag = fUpperLeftSprite | fSpriteBorder;
+        m_sprites[id].flag = fUpperLeftSprite;
         m_sprites[id].layer = SpriteLayer::ENTITY;
         m_sprites[id].anim_index = -1;
         m_systems[id] |= eSpriteSystem;
