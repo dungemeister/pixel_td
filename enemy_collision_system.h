@@ -15,8 +15,8 @@ public:
                 if(objects.m_types[id2] != EntityGlobalType::ENEMY_ENTITY) continue;
 
                 if (circles_overlap(
-                    objects.m_positions[id1].get_vector2d(), 10.f,
-                    objects.m_positions[id2].get_vector2d(), 10.f)) {
+                    objects.m_sprites[id1].center, objects.m_sprites[id1].radius,
+                    objects.m_sprites[id2].center, objects.m_sprites[id2].radius)) {
                     
                     collisions.emplace_back(id1, id2);
                 }
@@ -24,12 +24,12 @@ public:
         }
 
         for(const auto& [id1, id2]: collisions){
-            auto& obj1 = objects.m_positions[id1];
-            float radius1 = 10.f;
-            auto& obj2 = objects.m_positions[id2];
-            float radius2 = 10.f;
+            auto& obj1 = objects.m_sprites[id1].center;
+            float radius1 = objects.m_sprites[id1].radius;
+            auto& obj2 = objects.m_sprites[id2].center;
+            float radius2 = objects.m_sprites[id2].radius;
 
-            Vector2D diff = obj1.get_vector2d() - obj2.get_vector2d();
+            Vector2D diff = obj1 - obj2;
             float distance = diff.magnitude();
 
             if(distance < 0.0001f){
@@ -40,11 +40,11 @@ public:
             float overlap = radius1 + radius2 - distance;
             if(overlap > 0){
                 Vector2D correction = diff.normalize() * overlap;
-                obj1.x += correction.x;
-                obj1.y += correction.y;
-                
-                obj2.x -= correction.x;
-                obj2.y -= correction.y;
+                obj1 += correction;
+                objects.m_sprites[id1].update_pos_from_center();
+
+                obj2 -= correction;
+                objects.m_sprites[id2].update_pos_from_center();
             }
         }
     }

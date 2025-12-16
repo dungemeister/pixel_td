@@ -157,6 +157,11 @@ struct SpriteComponent
     int anim_index;    //For animated sprite index of current texture
     Vector2D forward;  //Forward vector of the sprite for rotation calculation 
     std::variant<int, float, std::string> value; //Some value for handling
+    float radius;
+
+    void calc_radius(){
+        radius = std::sqrt((width + height) * scale / 2);
+    }
     void calc_center(){
         center = {posX + width * scale / 2, posY + height * scale / 2};
     }
@@ -413,6 +418,7 @@ Entities() {
             SDL_Log("WARNING: Unexpected enemy type %d", type);
         }
         m_sprites[id].calc_center();
+        m_sprites[id].calc_radius();
 
         m_borders[id].x_min = 0;
         m_borders[id].x_max = 0;
@@ -460,6 +466,7 @@ Entities() {
             m_sprites[id].height = tile_size.y * 1.2;
             m_sprites[id].scale = 1.2;
             m_sprites[id].calc_center();
+            m_sprites[id].calc_radius();
             m_sprites[id].colR = 0.6;
             m_sprites[id].colG = 0.6;
             m_sprites[id].colB = 0.6;
@@ -604,6 +611,7 @@ Entities() {
         m_sprites[id].height = rect.h;
         m_sprites[id].scale = 1.2;
         m_sprites[id].calc_center();
+        m_sprites[id].calc_radius();
         m_sprites[id].colR = 0.6;
         m_sprites[id].colG = 0.6;
         m_sprites[id].colB = 0.6;
