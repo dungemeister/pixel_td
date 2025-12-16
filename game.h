@@ -74,7 +74,7 @@ private:
     std::unordered_map<SDL_Scancode, TowerDescription> m_towers_scancode;
 
     std::unordered_map<ComponentType, float> m_components_data;
-    std::unordered_map<ComponentType, std::function<void(float)>> m_components_callbacks;
+    std::unordered_map<ComponentType, std::function<bool(float)>> m_components_callbacks;
 
     GameState m_state;
     int m_running;
@@ -83,7 +83,8 @@ private:
 
     float       m_castle_health = 100.f;
     const float m_max_castle_health = 100.f;
-    float m_player_gold   = 100.f;
+    
+    float m_player_gold   = 10.f;
 
     float m_hud_font_size = 24.f;
     TTF_Font* m_info_font;
@@ -106,6 +107,7 @@ private:
     void load_decor_random_sprites(SpriteType type, size_t size);
     void register_type(SpriteType type, const std::vector<std::string>& textures);
     void register_towers();
+    void register_enemies();
     
     void update_game();
 

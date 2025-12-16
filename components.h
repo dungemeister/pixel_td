@@ -103,12 +103,12 @@ enum SpriteType{
     FIRE_TOWER  ,
     POISON_TOWER,
     //ENTITY LAYER.ENEMIES
-    VIKING,
-    DRAGONIT,
-    BEE,
-    SERJANT,
-    TANK,
-    TARGET,
+    VIKING_SPRITE,
+    DRAGONIT_SPRITE,
+    BEE_SPRITE,
+    SERJANT_SPRITE,
+    TANK_SPRITE,
+    TARGET_SPRITE,
     //FIRING LAYER
     FIRE_PROJECTILE,
     ICE_PROJECTILE,
@@ -177,6 +177,16 @@ enum TowerType{
     POISON_TOWER_DATA,
 };
 
+enum EnemyType{
+    VIKING,
+    DRAGONIT,
+    BEE,
+    SERJANT,
+    TANK,
+
+    ENEMY_TYPES_SIZE,
+};
+
 struct MapComponent{
     std::pair<size_t, size_t> resolution;
     
@@ -220,6 +230,16 @@ struct TowerDescription{
     std::unordered_map<int, float> experience_distribution;
 };
 
+struct EnemyDescription{
+    float health;
+    float regeneration;
+    float damage;
+    float speed;
+    float bounty;
+    EnemyType type;
+    float armor;
+};
+
 struct FiringComponent{
     float interval;
     float cooldown;
@@ -246,7 +266,11 @@ Entities() {
     std::vector<VersionComponent>                   m_versions;
     std::vector<EntitySystems_t>                    m_systems;
     std::vector<EntityGlobalType>                   m_types;
+    
+    std::vector<std::variant<std::monostate, EnemyType, TowerType>> m_concrete_types;
+
     std::unordered_map<TowerType, TowerDescription> m_towers_descr;
+    std::unordered_map<EnemyType, EnemyDescription> m_enemies_descr;
 
     EntityID get_empty_id() const { return m_empty_id; }
 
@@ -262,6 +286,7 @@ Entities() {
         m_versions.reserve(n);
         m_systems.reserve(n);
         m_types.reserve(n);
+        m_concrete_types.reserve(n);
 
     }
     size_t size() const { return m_names.size(); }
@@ -294,6 +319,7 @@ Entities() {
         m_firings.push_back(FiringComponent());
         m_health.push_back(HealthComponent());
         m_versions.push_back(VersionComponent());
+        m_concrete_types.push_back(std::monostate{});
 
         m_health.back().alive = 1;
         return id;
@@ -312,6 +338,7 @@ Entities() {
         m_firings[id] = FiringComponent();
         m_health[id].alive = 0;
         m_versions[id].version += 1;
+        m_concrete_types[id] = std::monostate{};
     }
 
     void remove_object(const std::string& name){
@@ -354,7 +381,7 @@ Entities() {
         m_health[id].alive = state;
     }
 
-    EntityID spawn_enemies_targeted(const Level& level, const Vector2D& target, const SDL_FPoint& spawn_pos, SpriteType type){
+    EntityID spawn_enemies_targeted(const Level& level, const Vector2D& target, const SDL_FPoint& spawn_pos, EnemyType type){
         auto id = add_object("enemy");
         auto tile_size = level.get_tile_size();
         auto path      = level.get_road_tiles();
@@ -374,48 +401,45 @@ Entities() {
         m_sprites[id].angle = 0;
         m_sprites[id].flag = fUpperLeftSprite | fSpriteBorder;
         m_sprites[id].layer = SpriteLayer::ENTITY;
-        m_sprites[id].type = type;
         m_sprites[id].anim_index = -1;
         m_systems[id] |= eSpriteSystem;
-        switch(type){
-            case SpriteType::VIKING:
-                m_sprites[id].scale = 0.5;
-                m_health[id].max_health = 10.f;
-                m_health[id].cur_health = m_health[id].max_health;
-                m_health[id].regeneration = 0.05f;
-                m_sprites[id].flag |= fSpriteHealthBar;
-
-            break;
-            case SpriteType::BEE:
-                m_sprites[id].scale = 0.5;
-                m_health[id].max_health = 5.f;
-                m_health[id].cur_health = m_health[id].max_health;
-                m_health[id].regeneration = 0.f;
-                m_sprites[id].flag |= fSpriteHealthBar;
-            break;
-            case SpriteType::DRAGONIT:
-                m_sprites[id].scale = 0.7;
-                m_health[id].max_health = 20.f;
-                m_health[id].cur_health = m_health[id].max_health;
-                m_health[id].regeneration = 0.1f;
-                m_sprites[id].flag |= fSpriteHealthBar;
-            break;
-            case SpriteType::SERJANT:
-                m_sprites[id].scale = 0.9;
-                m_health[id].max_health = 25.f;
-                m_health[id].cur_health = m_health[id].max_health;
-                m_health[id].regeneration = 0.2f;
-                m_sprites[id].flag |= fSpriteHealthBar;
-            break;
-            case SpriteType::TANK:
-                m_sprites[id].scale = 1.1;
-                m_health[id].max_health = 40.f;
-                m_health[id].cur_health = m_health[id].max_health;
-                m_health[id].regeneration = 0.5f;
-                m_sprites[id].flag |= fSpriteHealthBar;
-            break;
-            default:
-            SDL_Log("WARNING: Unexpected enemy type %d", type);
+        auto enemy_descr = m_enemies_descr.find(type);
+        if(enemy_descr == m_enemies_descr.end())
+            SDL_Log("Fail to get enemy type %d", type);
+        else{
+            auto descr = enemy_descr->second;
+            m_health[id].max_health = descr.health;
+            m_health[id].cur_health = m_health[id].max_health;
+            m_health[id].regeneration = descr.regeneration;
+            m_sprites[id].flag |= fSpriteHealthBar;
+            m_moves[id].speed = descr.speed;
+            m_concrete_types[id] = type;
+            switch(type){
+                case EnemyType::VIKING:
+                    m_sprites[id].type = SpriteType::VIKING_SPRITE;
+                    m_sprites[id].scale = 0.5;
+                break;
+                case EnemyType::BEE:
+                    m_sprites[id].type = SpriteType::BEE_SPRITE;
+                    m_sprites[id].scale = 0.5;
+                break;
+                case EnemyType::DRAGONIT:
+                    m_sprites[id].type = SpriteType::DRAGONIT_SPRITE;
+                    m_sprites[id].scale = 0.7;
+                break;
+                case EnemyType::SERJANT:
+                    m_sprites[id].type = SpriteType::SERJANT_SPRITE;
+                    m_sprites[id].scale = 0.9;
+                break;
+                case EnemyType::TANK:
+                    m_sprites[id].type = SpriteType::TANK_SPRITE;
+                    m_sprites[id].scale = 1.1;
+                break;
+                default:
+                    SDL_Log("WARNING: Unexpected enemy type %d", type);
+                    m_sprites[id].type = SpriteType::UNDEFINED;
+                    m_sprites[id].scale = 1.1;
+            }
         }
         m_sprites[id].calc_center();
         m_sprites[id].calc_radius();
@@ -427,7 +451,6 @@ Entities() {
         m_borders[id].y_max = (spawn_pos.y + tile_size.y / 4);
         // objects.m_flags[id] |= fEntityMapBorder;
 
-        m_moves[id].speed = 100.f;
         m_moves[id].targeted = 1;
         m_moves[id].target = target;
         
@@ -736,6 +759,51 @@ Entities() {
             return &it->second;
         }
         return nullptr;
+    }
+
+    EnemyDescription create_enemy_descr(EnemyType type){
+        EnemyDescription enemy;
+        enemy.type = type;
+        switch(type){
+            case EnemyType::VIKING:
+                enemy.armor  = 5.f;
+                enemy.bounty = 2.f;
+                enemy.damage = 2.f;
+                enemy.health = 3.f;
+                enemy.speed  = 125.f;
+            break;
+            case EnemyType::BEE:
+                enemy.armor  = 2.f;
+                enemy.bounty = 1.f;
+                enemy.damage = 1.f;
+                enemy.health = 1.f;
+                enemy.speed  = 150.f;
+            break;
+            case EnemyType::DRAGONIT:
+                enemy.armor  = 8.f;
+                enemy.bounty = 3.f;
+                enemy.damage = 2.f;
+                enemy.health = 5.f;
+                enemy.speed  = 100.f;
+            break;
+            case EnemyType::SERJANT:
+                enemy.armor  = 10.f;
+                enemy.bounty = 8.f;
+                enemy.damage = 5.f;
+                enemy.health = 15.f;
+                enemy.speed  = 75.f;
+            break;
+            case EnemyType::TANK:
+                enemy.armor  = 15.f;
+                enemy.bounty = 15.f;
+                enemy.damage = 10.f;
+                enemy.health = 25.f;
+                enemy.speed  = 50.f;
+            break;
+        }
+        m_enemies_descr.emplace(type, enemy);
+
+        return enemy;
     }
 };
 

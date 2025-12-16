@@ -6,17 +6,29 @@
 
 class CastleDamageSystem{
 public:
-    void update(Entities& objects, Level& level, float deltatime, std::unordered_map<ComponentType, std::function<void(float)>> callbacks){
+    void update(Entities& objects, Level& level, float deltatime, std::unordered_map<ComponentType, std::function<bool(float)>> callbacks){
         for(int id = 0, n = objects.size(); id < n; id++){
             if(objects.m_types[id] == EntityGlobalType::ENEMY_ENTITY){
 
                 Vector2D pos = objects.m_sprites[id].center;
                 if(level.is_pos_in_castle(pos)){
                     std::cout << "Enemy " << id << " damaged castle" << std::endl;
-                    objects.reset_object(id);
+                    auto concrete_enemy_type = objects.m_concrete_types[id];
+                    if(!std::holds_alternative<EnemyType>(concrete_enemy_type)){
+                        SDL_Log("WARNING: wrong concrete enemy type");
+                        objects.reset_object(id);
+                        continue;
+                    }
+                    //Finding assosiated callback and enemy descriptor
                     auto health_cb = callbacks.find(ComponentType::CASTLE_HEALTH);
-                    if(health_cb != callbacks.end())
-                        health_cb->second(10.f);
+                    auto descr = objects.m_enemies_descr.find(std::get<EnemyType>(concrete_enemy_type));
+                    if(health_cb != callbacks.end() &&
+                       descr != objects.m_enemies_descr.end()){
+                        
+                        health_cb->second(descr->second.damage);
+                    }
+                    
+                    objects.reset_object(id);
                     
                 }
             }
@@ -33,8 +45,21 @@ public:
 
                             auto burst_damage = objects.m_firings[id].descr->burst_damage;
                             objects.m_health[enemy_id].cur_health -= burst_damage;
-                            if(objects.m_health[enemy_id].cur_health <= 0.f)
+                            if(objects.m_health[enemy_id].cur_health <= 0.f){
+                                auto concrete_enemy_type = objects.m_concrete_types[enemy_id];
+                                if(!std::holds_alternative<EnemyType>(concrete_enemy_type)){
+                                    SDL_Log("WARNING: wrong concrete enemy type deathrattle");
+                                }
+                                else{
+                                    auto gold_cb = callbacks.find(ComponentType::PLAYER_GOLD);
+                                    auto descr = objects.m_enemies_descr.find(std::get<EnemyType>(concrete_enemy_type));
+                                    if(gold_cb != callbacks.end() &&
+                                       descr != objects.m_enemies_descr.end()){
+                                        gold_cb->second(descr->second.bounty);
+                                    }
+                                }
                                 objects.reset_object(enemy_id);
+                            }
                        }
                     
                     objects.reset_object(id);

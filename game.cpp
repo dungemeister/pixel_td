@@ -101,55 +101,60 @@ void Game::init_game(){
     m_objects.reserve(256);
 
     //Register entities types
-    register_type(SpriteType::UNDEFINED,{"assets/quot_stickers.png"});
-    register_type(SpriteType::TILE,             {"assets/grass.png"});
-    register_type(SpriteType::ROAD,             {"assets/dirt_road.png"});
-    register_type(SpriteType::TOWER,            {"assets/tower.bmp"});
-    register_type(SpriteType::SPAWNER,          {"assets/dirt_road.png",
-                                                 "assets/ground1.bmp"});
-    register_type(SpriteType::CASTLE,           {"assets/dirt_road.png"});
+    register_type(SpriteType::UNDEFINED,             {"assets/quot_stickers.png"});
+    register_type(SpriteType::TILE,                  {"assets/grass.png"});
+    register_type(SpriteType::ROAD,                  {"assets/dirt_road.png"});
+    register_type(SpriteType::TOWER,                 {"assets/tower.bmp"});
+    register_type(SpriteType::SPAWNER,               {"assets/dirt_road.png",
+                                                      "assets/ground1.bmp"});
+    register_type(SpriteType::CASTLE,                {"assets/dirt_road.png"});
     
-    register_type(SpriteType::ICE_TOWER,        {"assets/ice_tower.png"});
-    register_type(SpriteType::FIRE_TOWER,       {"assets/fire/fire_tower1.png",
-                                                 "assets/fire/fire_tower2.png",
-                                                 "assets/fire/fire_tower3.png",
-                                                 "assets/fire/fire_tower4.png",
-                                                 "assets/fire/fire_tower5.png",
-                                                 "assets/fire/fire_tower3.png"});
-    // register_type(SpriteType::POISON_TOWER,      {"assets/poison_tower.png"});
-    register_type(SpriteType::POISON_TOWER,      {"assets/poison1_tower.png"});
-    register_type(SpriteType::VIKING,            {"assets/enemies/viking.png"});
-    register_type(SpriteType::DRAGONIT,          {"assets/enemies/dragonit.png"});
-    register_type(SpriteType::BEE,               {"assets/enemies/bee.png"});
-    register_type(SpriteType::SERJANT,           {"assets/enemies/serjant.png"});
-    register_type(SpriteType::TANK,              {"assets/enemies/tank.png"});
+    register_type(SpriteType::ICE_TOWER,             {"assets/ice_tower.png"});
+    register_type(SpriteType::FIRE_TOWER,            {"assets/fire/fire_tower1.png",
+                                                      "assets/fire/fire_tower2.png",
+                                                      "assets/fire/fire_tower3.png",
+                                                      "assets/fire/fire_tower4.png",
+                                                      "assets/fire/fire_tower5.png",
+                                                      "assets/fire/fire_tower3.png"});
+    // register_type(SpriteType::POISON_TOWER,          {"assets/poison_tower.png"});
+    register_type(SpriteType::POISON_TOWER,          {"assets/poison1_tower.png"});
+
+    register_type(SpriteType::VIKING_SPRITE,         {"assets/enemies/viking.png"});
+    register_type(SpriteType::DRAGONIT_SPRITE,       {"assets/enemies/dragonit.png"});
+    register_type(SpriteType::BEE_SPRITE,            {"assets/enemies/bee.png"});
+    register_type(SpriteType::SERJANT_SPRITE,        {"assets/enemies/serjant.png"});
+    register_type(SpriteType::TANK_SPRITE,           {"assets/enemies/tank.png"});
     
     register_type(SpriteType::FIRE_PROJECTILE,       {"assets/fire/fireball.png"});
     register_type(SpriteType::FIRE_AOE,              {});
-    register_type(SpriteType::ICE_PROJECTILE,       {"assets/ice_bullet.png"});
-    register_type(SpriteType::POISON_PROJECTILE,    {"assets/poisonous_ball.png"});
+    register_type(SpriteType::ICE_PROJECTILE,        {"assets/ice_bullet.png"});
+    register_type(SpriteType::POISON_PROJECTILE,     {"assets/poisonous_ball.png"});
 
-    register_type(SpriteType::CASTLE_DECOR,     {"assets/statue.bmp"});
-    register_type(SpriteType::SPAWNER_DECOR,    {"assets/spawner.bmp"});
-    register_type(SpriteType::BUSH0_DECOR,      {"assets/bush0.bmp"});
-    register_type(SpriteType::BUSH1_DECOR,      {"assets/bush1.bmp"});
-    register_type(SpriteType::BUSH2_DECOR,      {"assets/bush2.bmp"});
+    register_type(SpriteType::CASTLE_DECOR,          {"assets/statue.bmp"});
+    register_type(SpriteType::SPAWNER_DECOR,         {"assets/spawner.bmp"});
+    register_type(SpriteType::BUSH0_DECOR,           {"assets/bush0.bmp"});
+    register_type(SpriteType::BUSH1_DECOR,           {"assets/bush1.bmp"});
+    register_type(SpriteType::BUSH2_DECOR,           {"assets/bush2.bmp"});
 
-    register_type(SpriteType::HEALTH_BAR,       {});
+    register_type(SpriteType::HEALTH_BAR,            {});
     
-    register_type(SpriteType::HUD_LAYOUT,           {});
-    register_type(SpriteType::HUD_HEARTH,           {"assets/hearth.png", "assets/broken_hearth.png"});
-    register_type(SpriteType::HUD_COINS,            {"assets/coins.png"});
-    register_type(SpriteType::HUD_HEALTH_BAR,       {});
-    register_type(SpriteType::HUD_PLAYER_GOLD,      {});
-    register_type(SpriteType::HUD_TEXT,             {});
+    register_type(SpriteType::HUD_LAYOUT,            {});
+    register_type(SpriteType::HUD_HEARTH,            {"assets/heart.png", "assets/broken_hearth.png"});
+    register_type(SpriteType::HUD_COINS,             {"assets/coins.png"});
+    register_type(SpriteType::HUD_HEALTH_BAR,        {});
+    register_type(SpriteType::HUD_PLAYER_GOLD,       {});
+    register_type(SpriteType::HUD_TEXT,              {});
     
+    //Register enemies and tower types based on current level
     register_towers();
+    register_enemies();
 
+    //Load level tiles and decoration sprites
     load_level_tiles();
     load_decorations();
     load_towers();
     
+    //Load HUD and UI
     load_hud();
 }
 
@@ -188,19 +193,25 @@ void Game::handle_mouse_event(Entities& objects, const SDL_MouseButtonEvent& mou
 
         if(m_components_data[ComponentType::PLAYER_GOLD] > 0 &&
            m_selected_tower != nullptr){
-
-            if(objects.add_tower(m_cur_level, m_selected_tower->type, mouse_vec) > 0){
-                std::cout << "Added tower to tile (" << mouse_pos.x << ", "
-                                                        << mouse_pos.y <<
-                                                    ")" << std::endl;
-                auto callback = m_components_callbacks[ComponentType::PLAYER_GOLD];
-                callback(m_selected_tower->cost);
+            
+                auto callback = m_components_callbacks.find(ComponentType::PLAYER_GOLD);
+                if(callback != m_components_callbacks.end()){
+                    auto res = callback->second(-m_selected_tower->cost);
+                    if(res){
+                        objects.add_tower(m_cur_level, m_selected_tower->type, mouse_vec);
+                        SDL_Log("Added tower to tile (%.1f, %.1f)", mouse_pos.x, mouse_pos.y);
+                    }
+                    else{
+                        SDL_Log("Not enough gold. Current gold %.1f", m_components_data[ComponentType::PLAYER_GOLD]);
+                    }
+                }
+                else{
+                    SDL_Log("WARNING: cannot find player's gold callback");
+                }
                 m_selected_tower = nullptr;
             }
-            else{
-                std::cout << "Cannot add tower to " << mouse_event.x << " " << mouse_event.y <<
-                            ". Tile already occupied or not in level map" << std::endl;
-            }
+        else{
+            SDL_Log("WARNING: selected tower type [%d]; player's gold %.1f", m_selected_tower->type, m_components_data[ComponentType::PLAYER_GOLD]);
         }
     }
     else if(mouse_event.button == SDL_BUTTON_RIGHT){
@@ -208,7 +219,7 @@ void Game::handle_mouse_event(Entities& objects, const SDL_MouseButtonEvent& mou
             auto id = objects.spawn_enemies_targeted(m_cur_level,
                                                      m_cur_level.get_castle_pos(),
                                                      mouse_pos,
-                                                     static_cast<SpriteType>(static_cast<int>(SpriteType::VIKING) + rand()%5));
+                                                     static_cast<EnemyType>(static_cast<int>(EnemyType::VIKING) + rand()%static_cast<int>(EnemyType::ENEMY_TYPES_SIZE)));
 
         }
     }
@@ -550,19 +561,28 @@ void Game::load_hearth_callback(){
                 
                 SDL_Log("GAME OVER");
             }
+            return true;
         }
+        return false;
     });
 }
 
 void Game::load_gold_callback(){
     m_components_data.emplace(ComponentType::PLAYER_GOLD, m_player_gold);
     m_components_callbacks.emplace(ComponentType::PLAYER_GOLD, [this](float value){
+        /*Callback used for increase/decrease player gold. Adding tower decrease gold and 
+        killing enemies increase gold*/
+
         auto it = m_components_data.find(ComponentType::PLAYER_GOLD);
-        if(it != m_components_data.end()){
-            it->second -= value;
+        if(it != m_components_data.end() &&
+          (it->second + value) > 0.f){
+         
+            it->second += value;
             SDL_Log("Gold %.1f", it->second);
             m_player_gold_text->SetText(std::to_string(static_cast<int>(it->second)));
+            return true;
         }
+        return false;
     });
 }
 
@@ -576,6 +596,14 @@ void Game::register_towers(){
 
     auto poison_tower = m_objects.create_tower_descr(TowerType::POISON_TOWER_DATA);
     m_towers_scancode.emplace(SDL_SCANCODE_3, poison_tower);
+}
+
+void Game::register_enemies(){
+    auto enemy = m_objects.create_enemy_descr(EnemyType::VIKING);
+    enemy      = m_objects.create_enemy_descr(EnemyType::BEE);
+    enemy      = m_objects.create_enemy_descr(EnemyType::DRAGONIT);
+    enemy      = m_objects.create_enemy_descr(EnemyType::SERJANT);
+    enemy      = m_objects.create_enemy_descr(EnemyType::TANK);
 }
 
 void Game::handle_update(){

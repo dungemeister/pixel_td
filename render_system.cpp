@@ -35,12 +35,12 @@ void RenderSystem::render(const Entities& objects){
     }
     for(auto& sprite_data: m_proj_sprites){
         if(!render_sprite(sprite_data)){
-            SDL_Log("render entity sprite: %s", SDL_GetError());
+            SDL_Log("render projectile sprite: %s", SDL_GetError());
         }
     }
     for(auto& sprite_data: m_hud_sprites){
         if(!render_sprite(sprite_data)){
-            SDL_Log("render entity sprite: %s", SDL_GetError());
+            SDL_Log("render hud sprite: %s", SDL_GetError());
         }
     }
 }
