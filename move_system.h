@@ -10,7 +10,8 @@ public:
             if((objects.m_systems[id] & eMoveSystem) == 0) continue;
             
             if(objects.m_moves[id].targeted && (objects.m_types[id] == EntityGlobalType::ENEMY_ENTITY)){
-                Vector2D pos = {objects.m_positions[id].x, objects.m_positions[id].y};
+                // Vector2D pos = {objects.m_positions[id].x, objects.m_positions[id].y};
+                Vector2D pos = {objects.m_sprites[id].center.x, objects.m_sprites[id].center.y};
                 Vector2D diff = objects.m_moves[id].target - pos;
                 Vector2D force = CalculateLaneConstraintForce(level, pos);
 
@@ -39,11 +40,11 @@ public:
                 // y = (int)(pos.y + posAdd.y + copysign(spacing, posAdd.y));
                 // if (posAdd.y != 0.0f)
                 pos.y += posAdd.y;
-                
-                objects.m_positions[id].x = pos.x;
-                objects.m_positions[id].y = pos.y;
-                objects.m_sprites[id].posX = objects.m_positions[id].x;
-                objects.m_sprites[id].posY = objects.m_positions[id].y;
+                objects.m_sprites[id].center = pos;
+                objects.m_sprites[id].update_pos_from_center();
+
+                objects.m_positions[id].x = objects.m_sprites[id].posX;
+                objects.m_positions[id].y = objects.m_sprites[id].posY;
             }
             else if(objects.m_moves[id].targeted &&
                    (objects.m_types[id] == EntityGlobalType::PROJECTILE_ENTITY)){
@@ -53,7 +54,8 @@ public:
                 if(objects.is_alive(target_id) &&
                    objects.m_moves[id].target_version == objects.m_versions[target_id]){
 
-                    objects.m_moves[id].target = objects.m_positions[target_id].get_vector2d();
+                    objects.m_moves[id].target = objects.m_sprites[target_id].center;
+                    // objects.m_moves[id].target = objects.m_positions[target_id].get_vector2d();
                 }
                 Vector2D pos = objects.m_positions[id].get_vector2d();
                 Vector2D diff = objects.m_moves[id].target - pos;
@@ -95,16 +97,16 @@ public:
     }
     Vector2D CalculateLaneConstraintForce(Level& level, Vector2D pos) {
         // Проекция позиции на центральную линию пути
-        Vector2D closestPoint = level.get_tile_center(pos);
+        Vector2D closestPoint = level.get_nearest_road_tile(pos).center_pos;
         Vector2D laneCenter = closestPoint;
         
         // Допустимое отклонение от центра
         Vector2D toCenter = laneCenter - pos;
         float distanceFromCenter = toCenter.magnitude();
-        float laneWidth = 20.f;
+        float laneWidth = 12.f;
         float maxForce = .2f;
         // Если мы слишком далеко от центра, мягко возвращаем
-        if (distanceFromCenter > laneWidth * 0.4) {
+        if (distanceFromCenter > laneWidth) {
             // Сила тем сильнее, чем дальше от центра
             float strength = (distanceFromCenter / (laneWidth * 0.5)) - 0.8;
             return toCenter.normalize() * strength * maxForce;

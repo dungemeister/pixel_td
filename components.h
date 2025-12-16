@@ -147,6 +147,7 @@ struct SpriteComponent
 
     float posX, posY; //Position
     float width, height; //Size
+    Vector2D center; // Center position
     float scale; //Width & height scale coef
     float colR, colG, colB; //Color blending
     float angle; //rotation angle
@@ -156,6 +157,13 @@ struct SpriteComponent
     int anim_index;    //For animated sprite index of current texture
     Vector2D forward;  //Forward vector of the sprite for rotation calculation 
     std::variant<int, float, std::string> value; //Some value for handling
+    void calc_center(){
+        center = {posX + width * scale / 2, posY + height * scale / 2};
+    }
+    void update_pos_from_center(){
+        posX = center.x - width * scale / 2;
+        posY = center.y - height * scale / 2;
+    }
 };
 
 enum TowerType{
@@ -359,7 +367,7 @@ Entities() {
         m_sprites[id].colG = 0.6;
         m_sprites[id].colB = 0.6;
         m_sprites[id].angle = 0;
-        m_sprites[id].flag = fCenterSprite;
+        m_sprites[id].flag = fUpperLeftSprite | fSpriteBorder;
         m_sprites[id].layer = SpriteLayer::ENTITY;
         m_sprites[id].type = type;
         m_sprites[id].anim_index = -1;
@@ -404,6 +412,7 @@ Entities() {
             default:
             SDL_Log("WARNING: Unexpected enemy type %d", type);
         }
+        m_sprites[id].calc_center();
 
         m_borders[id].x_min = 0;
         m_borders[id].x_max = 0;
@@ -450,6 +459,7 @@ Entities() {
             m_sprites[id].width = tile_size.x;
             m_sprites[id].height = tile_size.y * 1.2;
             m_sprites[id].scale = 1.2;
+            m_sprites[id].calc_center();
             m_sprites[id].colR = 0.6;
             m_sprites[id].colG = 0.6;
             m_sprites[id].colB = 0.6;
@@ -593,6 +603,7 @@ Entities() {
         m_sprites[id].width = rect.w;
         m_sprites[id].height = rect.h;
         m_sprites[id].scale = 1.2;
+        m_sprites[id].calc_center();
         m_sprites[id].colR = 0.6;
         m_sprites[id].colG = 0.6;
         m_sprites[id].colB = 0.6;
@@ -604,6 +615,7 @@ Entities() {
 
         m_moves[id].targeted = 1;
         m_moves[id].target_id = target_id;
+        // m_moves[id].target = m_sprites[target_id].center;
         m_moves[id].target = m_positions[target_id].get_vector2d();
         m_moves[id].target_version = m_versions[target_id];
         m_moves[id].rotation_angle = (m_moves[id].target - Vector2D(rect.x, rect.y)).angle();

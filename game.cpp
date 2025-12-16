@@ -462,6 +462,8 @@ void Game::load_decor_sprite(const Vector2D& pos, SpriteType type){
     sprite.posY = dst.y - (dst.h * height_shift);
     sprite.width = dst.w * (1 + width_shift);
     sprite.height = dst.h * (1 + height_shift);
+    sprite.center = {sprite.posX + sprite.width / 2,
+                     sprite.posY - sprite.height / 2};
     sprite.scale = 1;
     sprite.colR = 0.6;
     sprite.colG = 0.6;
@@ -500,6 +502,8 @@ void Game::load_decor_random_sprites(SpriteType type, size_t size){
         sprite.posY = dst.y - (dst.h * height_shift);
         sprite.width = dst.w * (1 + width_shift);
         sprite.height = dst.h * (1 + height_shift);
+        sprite.center = {sprite.posX + sprite.width / 2,
+                         sprite.posY - sprite.height / 2};
         sprite.scale = RandomFloat(0.7f, 1.5f);
         sprite.colR = 0.6;
         sprite.colG = 0.6;

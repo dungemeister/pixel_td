@@ -10,7 +10,7 @@ public:
         for(int id = 0, n = objects.size(); id < n; id++){
             if(objects.m_types[id] == EntityGlobalType::ENEMY_ENTITY){
 
-                Vector2D pos = objects.m_positions[id].get_vector2d();
+                Vector2D pos = objects.m_sprites[id].center;
                 if(level.is_pos_in_castle(pos)){
                     std::cout << "Enemy " << id << " damaged castle" << std::endl;
                     objects.reset_object(id);

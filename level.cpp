@@ -133,7 +133,7 @@ Vector2D Level::get_dir(Vector2D pos){
 }
 
 Vector2D Level::get_tile_center(Vector2D pos){
-    auto tile_opt = get_tile({pos.x, pos.y});
+    auto tile_opt = get_tile(pos.get_sdl_point());
     if(tile_opt.has_value())
     {
         return {tile_opt.value().pos.x + m_tile_width / 2, tile_opt.value().pos.y + m_tile_height / 2};
