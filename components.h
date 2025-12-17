@@ -243,6 +243,8 @@ struct TowerDescription{
                 return "Ice Tower";
             case TowerType::POISON_TOWER_DATA:
                 return "Poison Tower";
+            case TowerType::CLOUD_TOWER_DATA:
+                return "Cloud Tower";
             default:
                 return "Unknown";
         }
