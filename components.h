@@ -102,6 +102,7 @@ enum SpriteType{
     ICE_TOWER  ,
     FIRE_TOWER  ,
     POISON_TOWER,
+    CLOUD_TOWER,
     //ENTITY LAYER.ENEMIES
     VIKING_SPRITE,
     DRAGONIT_SPRITE,
@@ -117,6 +118,8 @@ enum SpriteType{
     EXPLOSION_AOE,
     POISON_PROJECTILE,
     POISON_AOE,
+    CLOUD_PROJECTILE,
+    CLOUD_AOE,
     //EFFECTS LAYER
     HEALTH_BAR,
     //HUD
@@ -175,6 +178,9 @@ enum TowerType{
     FIRE_TOWER_DATA,
     ICE_TOWER_DATA,
     POISON_TOWER_DATA,
+    CLOUD_TOWER_DATA,
+
+    TOWER_TYPES_SIZE,
 };
 
 enum EnemyType{
@@ -569,6 +575,16 @@ Entities() {
 
                     m_systems[id] |= eFiringSystem;
                 break;
+                case TowerType::CLOUD_TOWER_DATA:
+                    tower_descr = get_tower_descr(TowerType::CLOUD_TOWER_DATA);
+                    m_sprites[id].type = SpriteType::CLOUD_TOWER;
+                    m_firings[id].interval = tower_descr->firing_interval;
+                    m_firings[id].cooldown = m_firings[id].interval;
+                    m_firings[id].descr = tower_descr;
+                    m_firings[id].radius = tower_descr->radius;
+
+                    m_systems[id] |= eFiringSystem;
+                break;
             }
 
             m_descriptions[id] = TowerDescription(*tower_descr);
@@ -702,6 +718,13 @@ Entities() {
                 m_sprites[id].forward = {1, 0}; //Sprite forward direction;
                 m_sprites[id].scale = 1.2;
             break;
+            case TowerType::CLOUD_TOWER_DATA:
+                m_sprites[id].type = SpriteType::CLOUD_PROJECTILE;
+                m_sprites[id].forward = {1, -1}; //Sprite forward direction;
+                m_sprites[id].scale = 1.2;
+            break;
+            default:
+                SDL_Log("WARNING: add projectile from unknown tower type");
         }
         m_firings[id].descr = descr;
         m_moves[id].speed = descr->projectile_speed;
@@ -783,6 +806,27 @@ Entities() {
                 tower.experience_distribution.emplace(2, 500.f);
                 tower.experience_distribution.emplace(3, 700.f);
             break;
+            case TowerType::CLOUD_TOWER_DATA:
+                tower.cost = 15;
+                tower.firing_interval = 3.f;
+                tower.level = 0;
+                tower.radius = 100.f;
+                tower.remove_cost = tower.cost * 0.5f;
+                tower.type = type;
+                tower.slowing_percentage = 25;
+                tower.slowing_time = 1.5f;
+                tower.periodic_damage = 0.5f;
+                tower.periodic_time = 3.f;
+                tower.burst_damage = 8.f;
+                tower.projectile_speed = 200.f;
+                tower.firing_type = FiringType::eProjectile;
+                tower.experience_distribution.emplace(0, 150.f);
+                tower.experience_distribution.emplace(1, 300.f);
+                tower.experience_distribution.emplace(2, 500.f);
+                tower.experience_distribution.emplace(3, 700.f);
+            break;
+            default:
+                SDL_Log("WARNING: Registering unknown tower type");
         }
         m_towers_descr.emplace(type, tower);
 

@@ -31,8 +31,9 @@ public:
     const SDL_FRect& GetRect() const { return m_rect; }
 
     void RemoveWidgets(){
-        for(auto widget: m_widgets)
-            delete widget;
+        while(!m_widgets.empty()){
+            delete m_widgets.back();
+        }
         
         m_widgets.clear();
         

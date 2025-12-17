@@ -7,6 +7,7 @@
 #include <assert.h>
 #include <unordered_map>
 #include "test.h"
+#include "palette.h"
 
 float fps;
 
@@ -111,7 +112,7 @@ void Game::init_game(){
                                                       "assets/ground1.bmp"});
     register_type(SpriteType::CASTLE,                {"assets/dirt_road.png"});
     
-    register_type(SpriteType::ICE_TOWER,             {"assets/ice_tower.png"});
+    register_type(SpriteType::ICE_TOWER,             {"assets/ice/ice_tower.png"});
     register_type(SpriteType::FIRE_TOWER,            {"assets/fire/fire_tower1.png",
                                                       "assets/fire/fire_tower2.png",
                                                       "assets/fire/fire_tower3.png",
@@ -119,7 +120,8 @@ void Game::init_game(){
                                                       "assets/fire/fire_tower5.png",
                                                       "assets/fire/fire_tower3.png"});
     // register_type(SpriteType::POISON_TOWER,          {"assets/poison_tower.png"});
-    register_type(SpriteType::POISON_TOWER,          {"assets/poison1_tower.png"});
+    register_type(SpriteType::POISON_TOWER,          {"assets/poison/poison1_tower.png"});
+    register_type(SpriteType::CLOUD_TOWER,           {"assets/cloud/cloud_tower.png"});
 
     register_type(SpriteType::VIKING_SPRITE,         {"assets/enemies/viking.png"});
     register_type(SpriteType::DRAGONIT_SPRITE,       {"assets/enemies/dragonit.png"});
@@ -129,8 +131,9 @@ void Game::init_game(){
     
     register_type(SpriteType::FIRE_PROJECTILE,       {"assets/fire/fireball.png"});
     register_type(SpriteType::FIRE_AOE,              {});
-    register_type(SpriteType::ICE_PROJECTILE,        {"assets/ice_bullet.png"});
-    register_type(SpriteType::POISON_PROJECTILE,     {"assets/poisonous_ball.png"});
+    register_type(SpriteType::ICE_PROJECTILE,        {"assets/ice/ice_bullet.png"});
+    register_type(SpriteType::POISON_PROJECTILE,     {"assets/poison/poisonous_ball.png"});
+    register_type(SpriteType::CLOUD_PROJECTILE,      {"assets/cloud/cloud_projectile.png"});
 
     register_type(SpriteType::CASTLE_DECOR,          {"assets/statue.bmp"});
     register_type(SpriteType::SPAWNER_DECOR,         {"assets/spawner.bmp"});
@@ -623,6 +626,9 @@ void Game::register_towers(){
 
     auto poison_tower = m_objects.create_tower_descr(TowerType::POISON_TOWER_DATA);
     m_towers_scancode.emplace(SDL_SCANCODE_3, poison_tower);
+
+    auto cloud_tower = m_objects.create_tower_descr(TowerType::CLOUD_TOWER_DATA);
+    m_towers_scancode.emplace(SDL_SCANCODE_4, cloud_tower);
 }
 
 void Game::register_enemies(){
@@ -679,7 +685,6 @@ void Game::load_hud_layout(){
 }
 
 void Game::update_description_layout(const SpriteComponent& sprite, const Entities::Descriptor& descr){
-    remove_descriptor_widgets();
     auto sprites = m_render_system->get_registered_type_textures_pathes(sprite.type);
     if(auto tower = std::get_if<TowerDescription>(&descr)){
         auto name_str = tower->get_type_string();
@@ -696,6 +701,14 @@ void Game::update_description_layout(const SpriteComponent& sprite, const Entiti
 
         UIText* name = new UIText(name_str, m_descriptions_layout);
         m_descriptions_layout->PushBackWidgetVertical(name);
+
+        //Dont push circle to the layout
+        UICircle* tower_circle = new UICircle(m_descriptions_layout);
+        auto color = SdlWrapper::W_SDL_ConvertToFColor(Colors::Sunset::saffron);
+        color.a = 0.5f;
+        tower_circle->set_params(sprite.center.get_sdl_point(), tower->radius, color);
+        SDL_Log("Circle [%p]", tower_circle);
+        
 
     }
     else if(auto enemy = std::get_if<EnemyDescription>(&descr)){

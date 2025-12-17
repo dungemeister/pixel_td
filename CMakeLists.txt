@@ -17,6 +17,7 @@ set(SOURCES main.cpp
             ui/ui_text.cpp
             ui/ui_image.cpp
             ui/ui_slider.cpp
+            ui/ui_circle.cpp
 )
 
 set(INCLUDE_DIRS ui)

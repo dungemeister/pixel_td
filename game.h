@@ -18,6 +18,7 @@
 #include "ui_text.h"
 #include "ui_image.h"
 #include "ui_slider.h"
+#include "ui_circle.h"
 
 class Game{
 public:
