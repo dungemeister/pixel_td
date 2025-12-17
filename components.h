@@ -228,6 +228,19 @@ struct TowerDescription{
     float projectile_speed;
     FiringType firing_type;
     std::unordered_map<int, float> experience_distribution;
+
+    std::string get_type_string() const {
+        switch(type){
+            case TowerType::FIRE_TOWER_DATA:
+                return "Fire Tower";
+            case TowerType::ICE_TOWER_DATA:
+                return "Ice Tower";
+            case TowerType::POISON_TOWER_DATA:
+                return "Poison Tower";
+            default:
+                return "Unknown";
+        }
+    }
 };
 
 struct EnemyDescription{
@@ -238,6 +251,23 @@ struct EnemyDescription{
     float bounty;
     EnemyType type;
     float armor;
+
+    std::string get_type_string() const {
+        switch(type){
+            case EnemyType::VIKING:
+                return "Viking";
+            case EnemyType::BEE:
+                return "Bee";
+            case EnemyType::DRAGONIT:
+                return "Gragonit";
+            case EnemyType::SERJANT:
+                return "Serjant";
+            case EnemyType::TANK:
+                return "Tank";
+            default:
+                return "Unknown";
+        }
+    }
 };
 
 struct FiringComponent{
@@ -252,7 +282,8 @@ Entities() {
     reserve(100);
     m_empty_id = add_object("empty");
     }
-    
+    typedef std::variant<std::monostate, TowerDescription, EnemyDescription> Descriptor;
+
     EntityID m_empty_id;
 
     std::vector<std::string>                        m_names;
@@ -266,6 +297,7 @@ Entities() {
     std::vector<VersionComponent>                   m_versions;
     std::vector<EntitySystems_t>                    m_systems;
     std::vector<EntityGlobalType>                   m_types;
+    std::vector<Descriptor>                         m_descriptions;
     
     std::vector<std::variant<std::monostate, EnemyType, TowerType>> m_concrete_types;
 
@@ -287,6 +319,7 @@ Entities() {
         m_systems.reserve(n);
         m_types.reserve(n);
         m_concrete_types.reserve(n);
+        m_descriptions.reserve(n);
 
     }
     size_t size() const { return m_names.size(); }
@@ -320,7 +353,7 @@ Entities() {
         m_health.push_back(HealthComponent());
         m_versions.push_back(VersionComponent());
         m_concrete_types.push_back(std::monostate{});
-
+        m_descriptions.push_back(std::monostate{});
         m_health.back().alive = 1;
         return id;
     }
@@ -339,6 +372,7 @@ Entities() {
         m_health[id].alive = 0;
         m_versions[id].version += 1;
         m_concrete_types[id] = std::monostate{};
+        m_descriptions[id] = std::monostate{};
     }
 
     void remove_object(const std::string& name){
@@ -414,6 +448,7 @@ Entities() {
             m_sprites[id].flag |= fSpriteHealthBar;
             m_moves[id].speed = descr.speed;
             m_concrete_types[id] = type;
+            m_descriptions[id] = EnemyDescription(enemy_descr->second);
             switch(type){
                 case EnemyType::VIKING:
                     m_sprites[id].type = SpriteType::VIKING_SPRITE;
@@ -536,6 +571,7 @@ Entities() {
                 break;
             }
 
+            m_descriptions[id] = TowerDescription(*tower_descr);
 
             m_types[id] = EntityGlobalType::FRIEND_ENTITY;
 
@@ -760,7 +796,7 @@ Entities() {
         }
         return nullptr;
     }
-
+    
     EnemyDescription create_enemy_descr(EnemyType type){
         EnemyDescription enemy;
         enemy.type = type;
@@ -805,5 +841,31 @@ Entities() {
 
         return enemy;
     }
+
+    EnemyDescription* get_enemy_descr(EnemyType type){
+        auto it = m_enemies_descr.find(type);
+        if(it != m_enemies_descr.end()){
+            return &it->second;
+        }
+        return nullptr;
+    }
+
+    EntityID get_object_from_position(const Vector2D& pos){
+        for(int id = 1, n = Entities::size(); id < n; id++){
+            SDL_FRect rect = {m_sprites[id].posX,
+                              m_sprites[id].posY,
+                              m_sprites[id].width,
+                              m_sprites[id].height};
+            auto point = pos.get_sdl_point();
+            if(SDL_PointInRectFloat(&point, &rect) &&
+               is_alive(id) &&
+                (m_types[id] == EntityGlobalType::ENEMY_ENTITY ||
+                 m_types[id] == EntityGlobalType::FRIEND_ENTITY))
+                return id;
+        }
+
+        return get_empty_id();
+    }
+
 };
 

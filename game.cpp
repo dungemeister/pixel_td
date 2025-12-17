@@ -26,6 +26,7 @@ Game::Game()
     ,m_info_font(nullptr)
     ,m_player_gold_text(nullptr)
     ,m_slider(nullptr)
+    ,m_descriptions_layout(nullptr)
 {
     init();
 }
@@ -188,12 +189,33 @@ void Game::loop(){
 void Game::handle_mouse_event(Entities& objects, const SDL_MouseButtonEvent& mouse_event){
     SDL_FPoint mouse_pos = {mouse_event.x, mouse_event.y};
     Vector2D   mouse_vec = {mouse_event.x, mouse_event.y};
-
+    remove_descriptor_widgets();
     if(mouse_event.button == SDL_BUTTON_LEFT){
-        if(m_cur_level.is_occupied(mouse_vec)) return;
+        
+        if(m_selected_tower == nullptr &&
+           m_cur_level.is_occupied(mouse_vec)){
 
-        if(m_components_data[ComponentType::PLAYER_GOLD] > 0 &&
-           m_selected_tower != nullptr){
+            auto id = objects.get_object_from_position(mouse_vec);
+            if(id == objects.get_empty_id()){
+                SDL_Log("WARNING: Fail to get object ID from position");
+                return;
+            }
+
+            if(std::holds_alternative<std::monostate>(objects.m_descriptions[id])){
+                SDL_Log("WARNING: Fail to get tower description for object ID %ld", id);
+                return;
+            }
+            update_description_layout(objects.m_sprites[id], objects.m_descriptions[id]);
+            if (auto tower = std::get_if<TowerDescription>(&objects.m_descriptions[id])){
+                SDL_Log("Selected tower %ld, type %d", id, tower->type);
+            }
+            if (auto enemy = std::get_if<EnemyDescription>(&objects.m_descriptions[id])){
+                SDL_Log("Selected enemy %ld, type %d", id, enemy->type);
+            }
+        }
+        else if(m_components_data[ComponentType::PLAYER_GOLD] > 0 &&
+                m_selected_tower != nullptr &&
+                !m_cur_level.is_occupied(mouse_vec)){
             
                 auto callback = m_components_callbacks.find(ComponentType::PLAYER_GOLD);
                 if(callback != m_components_callbacks.end()){
@@ -212,7 +234,7 @@ void Game::handle_mouse_event(Entities& objects, const SDL_MouseButtonEvent& mou
                 m_selected_tower = nullptr;
             }
         else{
-            SDL_Log("WARNING: selected tower type [%d]; player's gold %.1f", m_selected_tower->type, m_components_data[ComponentType::PLAYER_GOLD]);
+            SDL_Log("WARNING: player's gold %.1f", m_components_data[ComponentType::PLAYER_GOLD]);
         }
     }
     else if(mouse_event.button == SDL_BUTTON_RIGHT){
@@ -534,12 +556,14 @@ void Game::load_towers(){
     auto id = m_objects.add_tower(m_cur_level, TowerType::FIRE_TOWER_DATA, {761.657, 382.826});
     id = m_objects.add_tower(m_cur_level, TowerType::ICE_TOWER_DATA, {942.076, 378.737});
     id = m_objects.add_tower(m_cur_level, TowerType::FIRE_TOWER_DATA, {615.781, 267.516});
+    id = m_objects.add_tower(m_cur_level, TowerType::POISON_TOWER_DATA, {791.7, 254.0});
 }
 
-void Game::register_type(SpriteType type, const std::vector<std::string>& textures){
+void Game::register_type(SpriteType type, const std::vector<std::string>& sprites){
 
-    m_render_system->register_type_sprite(type, textures);
-    m_animation_system.register_type(type, textures.size());
+    m_render_system->register_type_sprite(type, sprites);
+    m_animation_system.register_type(type, sprites.size());
+
 }
 
 void Game::load_hud(){
@@ -622,6 +646,7 @@ void Game::handle_update(){
 
 void Game::load_hud_layout(){
     auto level_pos = m_cur_level.get_position();
+    auto level_size = m_cur_level.get_size();
     SDL_FRect rect = {0, 0, 0, 0};
 
     UILayout* health_layout = new UILayout(this, SDL_GetRenderer(m_window), rect);
@@ -648,5 +673,46 @@ void Game::load_hud_layout(){
     gold_layout->PushBackWidgetHorizontal(gold_image);
     gold_layout->PushBackWidgetHorizontal(m_player_gold_text);
 
+    SDL_FRect descr_rect = {level_pos.x + level_size.x, 0};
+    m_descriptions_layout = new UILayout(this, SDL_GetRenderer(m_window), descr_rect);
+
+}
+
+void Game::update_description_layout(const SpriteComponent& sprite, const Entities::Descriptor& descr){
+    remove_descriptor_widgets();
+    auto sprites = m_render_system->get_registered_type_textures_pathes(sprite.type);
+    if(auto tower = std::get_if<TowerDescription>(&descr)){
+        auto name_str = tower->get_type_string();
+
+        std::string sprite_path = "";
+        if(sprites.size() > 0)
+            sprite_path = sprites[0];
+        else{
+            SDL_Log("WARNING: Sprites for type %d is empty", sprite.type);
+        }
+        UIImage* descr_img = new UIImage(sprite_path, m_descriptions_layout, SDL_GetRenderer(m_window));
+        descr_img->SetDestSize({128, 128});
+        m_descriptions_layout->PushBackWidgetHorizontal(descr_img);
+
+        UIText* name = new UIText(name_str, m_descriptions_layout);
+        m_descriptions_layout->PushBackWidgetVertical(name);
+
+    }
+    else if(auto enemy = std::get_if<EnemyDescription>(&descr)){
+        auto name_str = enemy->get_type_string();
+
+        std::string sprite_path = "";
+        if(sprites.size() > 0)
+            sprite_path = sprites[0];
+        else{
+            SDL_Log("WARNING: Sprites for type %d is empty", sprite.type);
+        }
+        UIImage* descr_img = new UIImage(sprite_path, m_descriptions_layout, SDL_GetRenderer(m_window));
+        descr_img->SetDestSize({128, 128});
+        m_descriptions_layout->PushBackWidgetHorizontal(descr_img);
+
+        UIText* name = new UIText(name_str, m_descriptions_layout);
+        m_descriptions_layout->PushBackWidgetVertical(name);
+    }
 
 }

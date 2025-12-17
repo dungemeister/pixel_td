@@ -30,6 +30,15 @@ public:
     void PushBackWidgetHorizontal(UIWidget* widget);
     const SDL_FRect& GetRect() const { return m_rect; }
 
+    void RemoveWidgets(){
+        for(auto widget: m_widgets)
+            delete widget;
+        
+        m_widgets.clear();
+        
+        m_rect.w = 0;
+        m_rect.h = 0;
+    }
 protected:
     Game* m_game;
     SDL_Renderer* m_renderer;

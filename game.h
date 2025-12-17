@@ -70,7 +70,8 @@ private:
     UIText* m_player_gold_text;
     UIText* m_castle_health_text;
     UISlider* m_slider;
-    std::vector<UILayout*> m_ui_layouts;
+    std::vector<UILayout*>  m_ui_layouts;
+    UILayout*               m_descriptions_layout;
 
     TowerDescription* m_selected_tower;
     std::unordered_map<SDL_Scancode, TowerDescription> m_towers_scancode;
@@ -113,4 +114,6 @@ private:
     
     void update_game();
 
+    void update_description_layout(const SpriteComponent& sprite, const Entities::Descriptor& descr);
+    void remove_descriptor_widgets(){ m_descriptions_layout->RemoveWidgets(); }
 };

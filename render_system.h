@@ -39,6 +39,9 @@ public:
 
     void register_type_sprite(SpriteType type, const std::vector<std::string>& texturepath);
     void unregister_type_sprite(SpriteType type);
+
+    std::vector<SDL_Texture*> get_registered_type_textures(SpriteType type);
+    std::vector<std::string>  get_registered_type_textures_pathes(SpriteType type);
     SDL_Window* m_window;
     std::vector<SpriteComponent> m_background_sprites;
     std::vector<SpriteComponent> m_decoration_sprites;
@@ -63,8 +66,6 @@ private:
     SDL_Texture* get_texture(std::string);
     bool render_sprite(const SpriteComponent& sprite);
     void add_sprite_vertices(SDL_Texture* texture, float x, float y, float w, float h);
-    std::vector<SDL_Texture*> get_registered_type_textures(SpriteType type);
-    std::vector<std::string> get_registered_type_textures_pathes(SpriteType type);
     bool render_sprite_texture(const SpriteComponent& sprite, SDL_Texture* text);
     size_t get_type_sprites_size(SpriteType type);
     void render_rectangle(SDL_FRect rect, float width, float angle, bool filled);
