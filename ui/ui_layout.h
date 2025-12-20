@@ -15,7 +15,8 @@ public:
 
     Game*           GetGame() const { return m_game; }
     SDL_Renderer*   GetRenderer() const { return m_renderer; }
-
+    SDL_FPoint      GetPosition() const { return {m_rect.x, m_rect.y}; }
+    
     virtual void update(float deltatime) {};
     virtual void draw() {
         for(auto widget: m_widgets){

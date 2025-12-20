@@ -73,6 +73,7 @@ private:
     UISlider* m_slider;
     std::vector<UILayout*>  m_ui_layouts;
     UILayout*               m_descriptions_layout;
+    UILayout*               m_map_layout;
 
     TowerDescription* m_selected_tower;
     std::unordered_map<SDL_Scancode, TowerDescription> m_towers_scancode;
@@ -108,7 +109,7 @@ private:
     void load_hud();
     void load_hud_layout();
     void load_decor_sprite(const Vector2D& pos, SpriteType type);
-    void load_decor_random_sprites(SpriteType type, size_t size);
+    void load_decor_random_sprites(SpriteType type, size_t size, float scale);
     void register_type(SpriteType type, const std::vector<std::string>& textures);
     void register_towers();
     void register_enemies();

@@ -14,7 +14,9 @@ public:
     void    SetSize(const UISize& size)     { m_rect = size; }
     UISize  GetSize() const                 { return m_rect; }
     UISize  GetSizePadding() const          { return m_rect_padding; }
-    
+    SDL_FPoint GetPadding() const { return {static_cast<float>(m_padding_x),
+                                            static_cast<float>(m_padding_y)}; }
+
     virtual void SetPosition(const SDL_FPoint& pos) {
         m_rect.x = pos.x;
         m_rect.y = pos.y;

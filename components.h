@@ -97,6 +97,7 @@ enum SpriteType{
     BUSH0_DECOR,
     BUSH1_DECOR,
     BUSH2_DECOR,
+    FIRECAMP_DECOR,
     //ENTITY LAYER.TOWERS
     TOWER      ,
     ICE_TOWER  ,
@@ -473,6 +474,11 @@ Entities() {
                 case EnemyType::SERJANT:
                     m_sprites[id].type = SpriteType::SERJANT_SPRITE;
                     m_sprites[id].scale = 0.9;
+
+                    m_animations[id].cur_frame = 0.f;
+                    m_animations[id].frames_size = 4;
+                    m_animations[id].fps = 6;
+                    m_systems[id] |= eSpriteAnimationSystem;
                 break;
                 case EnemyType::TANK:
                     m_sprites[id].type = SpriteType::TANK_SPRITE;

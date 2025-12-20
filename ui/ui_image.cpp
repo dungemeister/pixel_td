@@ -2,16 +2,14 @@
 #include "ui_layout.h"
 #include "SDL3_image/SDL_image.h"
 
-UIImage::UIImage(UILayout* layout, SDL_Renderer* renderer)
+UIImage::UIImage(UILayout* layout)
 :UIWidget(layout)
-,m_renderer(renderer)
 {
     
 }
 
-UIImage::UIImage(const std::string& sprite, UILayout* layout, SDL_Renderer* renderer)
+UIImage::UIImage(const std::string& sprite, UILayout* layout)
 :UIWidget(layout)
-,m_renderer(renderer)
 ,m_cur_sprite(sprite)
 
 {
@@ -23,9 +21,10 @@ void UIImage::Update(float deltatime){
 }
 
 void UIImage::Draw(){
+    auto render = m_layout->GetRenderer();
     auto texture = m_sprites.find(m_cur_sprite);
     if(!m_cur_sprite.empty() && (texture != m_sprites.end())){
-        SDL_RenderTexture(m_renderer, texture->second, NULL, &m_rect);
+        SDL_RenderTexture(render, texture->second, NULL, &m_rect);
     }
 }
 
@@ -40,8 +39,9 @@ void UIImage::load_texture(const std::string& sprite){
     auto surface = IMG_Load(sprite.c_str());
     if(!surface){
         SDL_Log("IMG_Load: %s", SDL_GetError());
+        return;
     }
-    auto texture = SDL_CreateTextureFromSurface(m_renderer, surface);
+    auto texture = SDL_CreateTextureFromSurface(m_layout->GetRenderer(), surface);
     if(!texture){
         SDL_Log("SDL_CreateTextureFromSurface: %s", SDL_GetError());
     }

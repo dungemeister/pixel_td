@@ -34,8 +34,8 @@ void UILayout::PushBackWidgetVertical(UIWidget* widget){
 
 void UILayout::PushBackWidgetHorizontal(UIWidget* widget){
     SDL_FPoint pos = {};
-    pos.x = m_rect.x + m_rect.w;
-    pos.y = m_rect.y;
+    pos.x = m_rect.x + m_rect.w + widget->GetPadding().x;
+    pos.y = m_rect.y + widget->GetPadding().y;
     widget->SetPosition(pos);
 
     m_rect.w += widget->GetSizePadding().w;

@@ -6,8 +6,8 @@
 
 class UIImage: public UIWidget{
 public:
-    UIImage(class UILayout* layout, SDL_Renderer* renderer);
-    UIImage(const std::string& sprite, class UILayout* layout, SDL_Renderer* renderer);
+    UIImage(class UILayout* layout);
+    UIImage(const std::string& sprite, class UILayout* layout);
 
     void Update(float deltatime) override;
     void Draw() override;
@@ -16,7 +16,6 @@ public:
 private:
     void load_texture(const std::string& sprite);
 
-    SDL_Renderer* m_renderer;
     std::unordered_map<std::string, SDL_Texture*> m_sprites;
     std::string m_cur_sprite;
 };

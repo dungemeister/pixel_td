@@ -28,6 +28,7 @@ Game::Game()
     ,m_player_gold_text(nullptr)
     ,m_slider(nullptr)
     ,m_descriptions_layout(nullptr)
+    ,m_map_layout(nullptr)
 {
     init();
 }
@@ -100,8 +101,16 @@ void Game::init_game(){
     m_levels.emplace_back("assets/map/level1.map", level_pos, level_size);
     m_cur_level = m_levels.back();
     m_levels.pop_back();
-
     m_objects.reserve(256);
+
+    // SDL_FRect map_rect = {level_pos.x - 3 * level_size.x / 64,
+    //                       level_pos.y - 3 * level_size.y / 64,
+    //                       level_size.x + 3 * level_size.x / 64 * 2,
+    //                       level_size.y  + 3 * level_size.y / 64 * 2};
+    // m_map_layout = new UILayout(this, SDL_GetRenderer(m_window), map_rect);
+    // UIImage* map_frame_img = new UIImage("assets/map_frame.png", m_map_layout);
+    // map_frame_img->SetDestSize({map_rect.w, map_rect.h});
+    // m_map_layout->PushBackWidgetHorizontal(map_frame_img);
 
     //Register entities types
     register_type(SpriteType::UNDEFINED,             {"assets/quot_stickers.png"});
@@ -126,7 +135,10 @@ void Game::init_game(){
     register_type(SpriteType::VIKING_SPRITE,         {"assets/enemies/viking.png"});
     register_type(SpriteType::DRAGONIT_SPRITE,       {"assets/enemies/dragonit.png"});
     register_type(SpriteType::BEE_SPRITE,            {"assets/enemies/bee.png"});
-    register_type(SpriteType::SERJANT_SPRITE,        {"assets/enemies/serjant.png"});
+    register_type(SpriteType::SERJANT_SPRITE,        {"assets/enemies/serjant_walk1.png",
+                                                      "assets/enemies/serjant_walk2.png",
+                                                      "assets/enemies/serjant_walk3.png",
+                                                      "assets/enemies/serjant_walk4.png"});
     register_type(SpriteType::TANK_SPRITE,           {"assets/enemies/tank.png"});
     
     register_type(SpriteType::FIRE_PROJECTILE,       {"assets/fire/fireball.png"});
@@ -140,6 +152,7 @@ void Game::init_game(){
     register_type(SpriteType::BUSH0_DECOR,           {"assets/bush0.bmp"});
     register_type(SpriteType::BUSH1_DECOR,           {"assets/bush1.bmp"});
     register_type(SpriteType::BUSH2_DECOR,           {"assets/bush2.bmp"});
+    register_type(SpriteType::FIRECAMP_DECOR,        {"assets/firecamp.png"});
 
     register_type(SpriteType::HEALTH_BAR,            {});
     
@@ -325,11 +338,11 @@ void Game::handle_draw(){
         layout->draw();
     }
     // TextureTest::test_texture_rendering(r, "assets/rocket_tower.png");
-    SDL_Color cursor_circle_color = {0xF7, 0x62, 0x18, 0x80};
-    bool res = Circle::render_circle_filled(r, m_cursor_pos.x, m_cursor_pos.y, 100, cursor_circle_color);
-    if(!res){
-        SDL_Log("render circle: %s", SDL_GetError());
-    }
+    // SDL_Color cursor_circle_color = {0xF7, 0x62, 0x18, 0x80};
+    // bool res = Circle::render_circle_filled(r, m_cursor_pos.x, m_cursor_pos.y, 100, cursor_circle_color);
+    // if(!res){
+    //     SDL_Log("render circle: %s", SDL_GetError());
+    // }
     char fps_str[256];
     sprintf(fps_str, "FPS: %.2f", fps);
     SDL_SetRenderDrawColor(r, 255, 0, 0, 255);
@@ -473,9 +486,9 @@ void Game::load_decorations(){
 //WARNING: sum of the decor elements should be less then grass tiles quantity otherwise deadlock
     load_decor_sprite(castle_pos, SpriteType::CASTLE_DECOR);
     load_decor_sprite(spawner_pos, SpriteType::SPAWNER_DECOR);
-    load_decor_random_sprites(SpriteType::BUSH0_DECOR, 33);
-    load_decor_random_sprites(SpriteType::BUSH1_DECOR, 44);
-    load_decor_random_sprites(SpriteType::BUSH2_DECOR, 40);
+    load_decor_random_sprites(SpriteType::BUSH0_DECOR, 33, RandomFloat(0.7f, 1.5f));
+    load_decor_random_sprites(SpriteType::BUSH1_DECOR, 44, RandomFloat(0.7f, 1.5f));
+    load_decor_random_sprites(SpriteType::BUSH2_DECOR, 40, RandomFloat(0.7f, 1.5f));
 
 }
 
@@ -514,7 +527,7 @@ void Game::load_decor_sprite(const Vector2D& pos, SpriteType type){
     m_cur_level.set_tile_decor_occupied(tile.row, tile.column, 1);
 }
 
-void Game::load_decor_random_sprites(SpriteType type, size_t size){
+void Game::load_decor_random_sprites(SpriteType type, size_t size, float scale=1.f){
     auto resolution = m_cur_level.get_resolution();
     auto tile_size = m_cur_level.get_tile_size();
     for(int i = 0; i < size; i++){
@@ -542,7 +555,7 @@ void Game::load_decor_random_sprites(SpriteType type, size_t size){
         sprite.height = dst.h * (1 + height_shift);
         sprite.center = {sprite.posX + sprite.width / 2,
                          sprite.posY - sprite.height / 2};
-        sprite.scale = RandomFloat(0.7f, 1.5f);
+        sprite.scale = scale;
         sprite.colR = 0.6;
         sprite.colG = 0.6;
         sprite.colB = 0.6;
@@ -656,7 +669,7 @@ void Game::load_hud_layout(){
     SDL_FRect rect = {0, 0, 0, 0};
 
     UILayout* health_layout = new UILayout(this, SDL_GetRenderer(m_window), rect);
-    UIImage* heart_image = new UIImage("assets/heart.png", health_layout, SDL_GetRenderer(m_window));
+    UIImage* heart_image = new UIImage("assets/heart.png", health_layout);
     heart_image->SetDestSize({64, 64});
     m_castle_health_text = new UIText(std::to_string(static_cast<int>(m_castle_health)), health_layout);
     m_castle_health_text->SetFontSize(44);
@@ -672,7 +685,7 @@ void Game::load_hud_layout(){
     
     rect.y = health_layout->GetRect().h;
     UILayout* gold_layout = new UILayout(this, SDL_GetRenderer(m_window), rect);
-    UIImage* gold_image = new UIImage("assets/coins.png", gold_layout, SDL_GetRenderer(m_window));
+    UIImage* gold_image = new UIImage("assets/coins.png", gold_layout);
     gold_image->SetDestSize({64, 64});
     m_player_gold_text = new UIText(std::to_string(static_cast<int>(m_player_gold)), gold_layout);
     m_player_gold_text->SetFontSize(44);
@@ -686,6 +699,7 @@ void Game::load_hud_layout(){
 
 void Game::update_description_layout(const SpriteComponent& sprite, const Entities::Descriptor& descr){
     auto sprites = m_render_system->get_registered_type_textures_pathes(sprite.type);
+    auto render = SDL_GetRenderer(m_window);
     if(auto tower = std::get_if<TowerDescription>(&descr)){
         auto name_str = tower->get_type_string();
 
@@ -695,20 +709,26 @@ void Game::update_description_layout(const SpriteComponent& sprite, const Entiti
         else{
             SDL_Log("WARNING: Sprites for type %d is empty", sprite.type);
         }
-        UIImage* descr_img = new UIImage(sprite_path, m_descriptions_layout, SDL_GetRenderer(m_window));
+        auto layout_pos = m_descriptions_layout->GetPosition();
+        UIImage* descr_img = new UIImage(sprite_path, m_descriptions_layout);
         descr_img->SetDestSize({128, 128});
         m_descriptions_layout->PushBackWidgetHorizontal(descr_img);
+        descr_img->SetPosition({layout_pos.x + 4 + 10, layout_pos.y + 4 + 10});
 
         UIText* name = new UIText(name_str, m_descriptions_layout);
         m_descriptions_layout->PushBackWidgetVertical(name);
+        name->SetPosition({name->GetPosition().x + 10, name->GetPosition().y + 10});
 
         //Dont push circle to the layout
         UICircle* tower_circle = new UICircle(m_descriptions_layout);
         auto color = SdlWrapper::W_SDL_ConvertToFColor(Colors::Sunset::saffron);
         color.a = 0.5f;
         tower_circle->set_params(sprite.center.get_sdl_point(), tower->radius, color);
-        SDL_Log("Circle [%p]", tower_circle);
-        
+
+        UIImage* frame_img = new UIImage("assets/frame.png", m_descriptions_layout);
+        auto frame_pos = descr_img->GetPosition();
+        frame_img->SetPosition({frame_pos.x - 4, frame_pos.y - 4});
+        frame_img->SetDestSize({128 + 8, 128 + 8});
 
     }
     else if(auto enemy = std::get_if<EnemyDescription>(&descr)){
@@ -720,12 +740,23 @@ void Game::update_description_layout(const SpriteComponent& sprite, const Entiti
         else{
             SDL_Log("WARNING: Sprites for type %d is empty", sprite.type);
         }
-        UIImage* descr_img = new UIImage(sprite_path, m_descriptions_layout, SDL_GetRenderer(m_window));
+        auto layout_pos = m_descriptions_layout->GetRect();
+        UIImage* descr_img = new UIImage(sprite_path, m_descriptions_layout);
         descr_img->SetDestSize({128, 128});
         m_descriptions_layout->PushBackWidgetHorizontal(descr_img);
+        descr_img->SetPosition({layout_pos.x + 4 + 10, layout_pos.y + 4 + 10});
 
-        UIText* name = new UIText(name_str, m_descriptions_layout);
-        m_descriptions_layout->PushBackWidgetVertical(name);
+        UILayout* lower_desc = new UILayout(this, render, {descr_img->GetPosition().x,
+                                                           descr_img->GetPosition().y + descr_img->GetSize().h + 10,
+                                                           0,
+                                                           0});
+        UIText* name = new UIText(name_str, lower_desc);
+        lower_desc->PushBackWidgetVertical(name);
+
+        UIImage* frame_img = new UIImage("assets/frame.png", lower_desc);
+        auto frame_pos = descr_img->GetPosition();
+        frame_img->SetPosition({frame_pos.x - 4, frame_pos.y - 4});
+        frame_img->SetDestSize({128 + 8, 128 + 8});
     }
 
 }
