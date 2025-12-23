@@ -1,10 +1,10 @@
-#include "ui_text.h"
+#include "ui_label.h"
 #include "ui_layout.h"
 #include "game.h"
 #include "palette.h"
 
-UIText::UIText(class UILayout* layout)
-    :UIWidget(layout)
+UILabel::UILabel(const std::string& id)
+    :UIWidget(id)
     ,m_texture(nullptr)
     ,m_font(nullptr)
     ,m_font_size(16)
@@ -13,18 +13,18 @@ UIText::UIText(class UILayout* layout)
     m_color = Colors::OceanSunset::bittersweet;
 }
 
-UIText::UIText(const std::string& text, class UILayout* layout)
-    :UIText(layout)
+UILabel::UILabel(const std::string& text, const std::string& id)
+    :UILabel(id)
 {
     SetText(text);
 }
 
-UIText::~UIText(){
+UILabel::~UILabel(){
     SDL_DestroyTexture(m_texture);
     TTF_CloseFont(m_font);
 }
 
-void UIText::UpdateTexture(){
+void UILabel::UpdateTexture(){
     if(!m_layout) return;
 
     if(m_texture){
@@ -42,63 +42,59 @@ void UIText::UpdateTexture(){
     }
 }
 
-void UIText::SetText(const std::string& text){
-    if(m_text == text) return;
-    
+void UILabel::SetText(const std::string& text){
     m_text = text;
     UpdateTexture();
 
 }
 
-void UIText::SetFontSize(int size){
+void UILabel::SetFontSize(int size){
     if(size < 0) return;
 
     m_font_size = size;
     UpdateTexture();
 }
 
-void UIText::Update(float deltatime){
-
+void UILabel::Update(float deltatime){
+    SetText(m_text);
 }
 
-void UIText::Draw(){
+void UILabel::Draw(SDL_Renderer* renderer){
     if(m_hiden) return;
 
-    DrawBackground();
-    DrawBorder();
-    DrawText();
+    DrawBackground(renderer);
+    DrawBorder(renderer);
+    DrawText(renderer);
 
 }
 
-void UIText::DrawText(){
+void UILabel::DrawText(SDL_Renderer* renderer){
     if(!m_layout) return;
 
-    auto render = m_layout->GetRenderer();
-    if(m_texture){
-        SDL_RenderTexture(render, m_texture, NULL, &m_rect);
+    if(!m_texture){
+        UpdateTexture();
     }
+    SDL_RenderTexture(renderer, m_texture, NULL, &m_rect);
 }
 
-void UIText::DrawBorder(){
+void UILabel::DrawBorder(SDL_Renderer* renderer){
     if(!m_layout) return;
 
-    auto renderer = m_layout->GetRenderer();
     SDL_Color color = Colors::OceanSunset::midnight_green;
     SDL_SetRenderDrawColor(renderer, color.r, color.g, color.b, color.a);
     SDL_RenderRect(renderer, &m_rect);
 }
 
-void UIText::DrawBackground(){
+void UILabel::DrawBackground(SDL_Renderer* renderer){
     if(!m_layout) return;
 
-    auto renderer = m_layout->GetRenderer();
     SDL_SetRenderDrawBlendMode(renderer, SDL_BLENDMODE_BLEND);
     SDL_SetRenderDrawColor(renderer, m_color.r, m_color.g, m_color.b, 33); // Белый цвет
 
     SDL_RenderFillRect(renderer, &m_rect);
 }
 
-SDL_Surface* UIText::CreateSurface(const std::string& text){
+SDL_Surface* UILabel::CreateSurface(const std::string& text){
     if(m_font){
         TTF_CloseFont(m_font);
     }

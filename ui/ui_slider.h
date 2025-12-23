@@ -4,10 +4,10 @@
 
 class UISlider: public UIWidget{
 public:
-    UISlider(class UILayout*);
+    UISlider(const std::string& id);
 
     void Update(float deltatime) override;
-    void Draw() override;
+    void Draw(SDL_Renderer* renderer) override;
     void set_range(float min, float max){
         m_min_value = min;
         m_max_value = max;
@@ -21,5 +21,5 @@ private:
     float m_value;
     float m_max_value;    
     float m_min_value;    
-    void render_rectangle(SDL_FRect dest_rect, float width, bool filled);
+    void render_rectangle(SDL_Renderer* renderer, SDL_FRect dest_rect, float width, bool filled);
 };

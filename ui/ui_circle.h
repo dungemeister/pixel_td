@@ -4,9 +4,9 @@
 
 class UICircle: public UIWidget{
 public:
-    UICircle(class UILayout*);
+    UICircle(const std::string& id);
     ~UICircle();
-    void Draw() override;
+    void Draw(SDL_Renderer* renderer) override;
     void set_params(SDL_FPoint center, float radius, SDL_FColor color);
 private:
     float       m_radius;

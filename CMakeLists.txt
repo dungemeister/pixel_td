@@ -14,7 +14,7 @@ set(SOURCES main.cpp
             spawn_system.cpp
             ui/ui_layout.cpp
             ui/ui_widget.cpp
-            ui/ui_text.cpp
+            ui/ui_label.cpp
             ui/ui_image.cpp
             ui/ui_slider.cpp
             ui/ui_circle.cpp

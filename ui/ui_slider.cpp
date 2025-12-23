@@ -1,8 +1,8 @@
 #include "ui_slider.h"
 #include "ui_layout.h"
 
-UISlider::UISlider(UILayout* layout)
-:UIWidget(layout)
+UISlider::UISlider(const std::string& id)
+:UIWidget(id)
 ,m_max_value(0.f)
 ,m_min_value(0.f)
 ,m_value(0.f)
@@ -13,17 +13,19 @@ void UISlider::Update(float deltatime){
 
 }
 
-void UISlider::Draw(){
-    SDL_FRect border_rect = {m_rect.x, m_rect.y, m_rect.w, m_rect.h};
-    SDL_FRect filled_rect = {m_rect.x, m_rect.y, m_rect.w * get_factor(), m_rect.h};
-    render_rectangle(border_rect, 2.f, false);
-    render_rectangle(filled_rect, 2.f, true);
+void UISlider::Draw(SDL_Renderer* renderer){
+    SDL_FRect border_rect = GetSize();
+
+    SDL_FRect filled_rect = GetSize();
+    filled_rect.w *= get_factor();
+
+    render_rectangle(renderer, border_rect, 2.f, false);
+    render_rectangle(renderer, filled_rect, 2.f, true);
 }
 
-void UISlider::render_rectangle(SDL_FRect dest_rect, float width, bool filled){
+void UISlider::render_rectangle(SDL_Renderer* renderer, SDL_FRect dest_rect, float width, bool filled){
     if(!m_layout) return;
 
-    auto render = m_layout->GetRenderer();
     SDL_Surface* surface = SDL_CreateSurface(dest_rect.w, dest_rect.h, SDL_PIXELFORMAT_RGBA32);
     if (!surface) {
         SDL_Log("Failed to create surface: %s\n", SDL_GetError());
@@ -51,8 +53,8 @@ void UISlider::render_rectangle(SDL_FRect dest_rect, float width, bool filled){
         SDL_FillSurfaceRect(surface, &inner_rect, SDL_MapRGBA(SDL_GetPixelFormatDetails(surface->format), nullptr, 0, 0, 0, 0));
     }
 
-    SDL_Texture* border_text = SDL_CreateTextureFromSurface(render, surface);
-    SDL_RenderTextureRotated(render, border_text, nullptr, &dest_rect, 0, &center, SDL_FLIP_HORIZONTAL);
+    SDL_Texture* border_text = SDL_CreateTextureFromSurface(renderer, surface);
+    SDL_RenderTextureRotated(renderer, border_text, nullptr, &dest_rect, 0, &center, SDL_FLIP_HORIZONTAL);
     
     SDL_DestroySurface(surface);
     SDL_DestroyTexture(border_text);

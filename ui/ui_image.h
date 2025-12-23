@@ -6,11 +6,11 @@
 
 class UIImage: public UIWidget{
 public:
-    UIImage(class UILayout* layout);
-    UIImage(const std::string& sprite, class UILayout* layout);
+    UIImage(const std::string& id);
+    UIImage(const std::string& sprite, const std::string& id);
 
     void Update(float deltatime) override;
-    void Draw() override;
+    void Draw(SDL_Renderer* renderer) override;
     void AddSprite(const std::string& sprite);
     void SetDestSize(SDL_FPoint size) { m_rect.w = size.x; m_rect.h = size.y;}
 private:

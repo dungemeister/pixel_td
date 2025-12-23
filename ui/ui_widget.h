@@ -1,14 +1,16 @@
 #pragma once
 #include "SDL3/SDL.h"
+#include <memory>
+#include <string>
 
 class UIWidget{
 public:
     typedef SDL_FRect UISize;
-    UIWidget(class UILayout*);
+    UIWidget(const std::string& id);
     UIWidget();
     virtual ~UIWidget();
 
-    void        SetLayout(UILayout* layout) { m_layout = layout; }
+    void        SetLayout(class UILayout* layout) { m_layout = layout; }
     UILayout*   GetLayout() const           { return m_layout; }
 
     void    SetSize(const UISize& size)     { m_rect = size; }
@@ -23,6 +25,7 @@ public:
         UpdatePadding();
     }
 
+    const std::string& Id() const { return m_id; }
     SDL_FPoint GetPosition() const { return {m_rect.x, m_rect.y}; }
 
     bool    IsHovered() const               { return m_hovered;}
@@ -52,7 +55,7 @@ public:
     bool GetHiden() const { return m_hiden; }
     
     virtual void Update(float deltatime) {}
-    virtual void Draw() {}
+    virtual void Draw(SDL_Renderer* renderer) {}
     virtual void HandleEvent(const SDL_Event& event) {}
 protected:
     class UILayout* m_layout;
@@ -64,4 +67,5 @@ protected:
     int m_padding_y;
 
     bool m_hiden;
+    std::string m_id;
 };

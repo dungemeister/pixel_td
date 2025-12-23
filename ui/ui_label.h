@@ -5,11 +5,11 @@
 #include "SDL3/SDL.h"
 #include "SDL3_ttf/SDL_ttf.h"
 
-class UIText: public UIWidget{
+class UILabel: public UIWidget{
 public:
-    UIText(class UILayout* layout);
-    UIText(const std::string& text, class UILayout* layout);
-    virtual ~UIText();
+    UILabel(const std::string& id);
+    UILabel(const std::string& text, const std::string& id);
+    virtual ~UILabel();
     void UpdateTexture();
     void SetText(const std::string& text);
     std::string GetText() const { return m_text; }
@@ -19,7 +19,7 @@ public:
         UpdateTexture();
     }
     void Update(float deltatime) override;
-    void Draw() override;
+    void Draw(SDL_Renderer* renderer) override;
     // void HandleEvent(const SDL_Event& event) override;
 private:
     SDL_Texture* m_texture;
@@ -33,7 +33,7 @@ private:
 
     SDL_Surface* CreateSurface(const std::string& text);
     
-    void DrawBackground();
-    void DrawBorder();
-    void DrawText();
+    void DrawBackground(SDL_Renderer* renderer);
+    void DrawBorder(SDL_Renderer* renderer);
+    void DrawText(SDL_Renderer* renderer);
 };

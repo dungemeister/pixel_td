@@ -2,8 +2,8 @@
 #include "ui_layout.h"
 #include <stdlib.h>
 
-UICircle::UICircle(UILayout* layout)
-:UIWidget(layout)
+UICircle::UICircle(const std::string& id)
+:UIWidget(id)
 ,m_radius(0.f)
 ,m_center()
 ,m_color()
@@ -17,9 +17,8 @@ UICircle::~UICircle(){
     free(m_indices);
 }
 
-void UICircle::Draw(){
+void UICircle::Draw(SDL_Renderer* renderer){
     SDL_FColor& col = m_color;
-    auto render = m_layout->GetRenderer();
     
     // Central vertice
     m_vertices[0] = (SDL_Vertex){
@@ -45,8 +44,8 @@ void UICircle::Draw(){
         m_indices[i * 3 + 2] = (i + 1) % m_segments + 1;
     }
     
-    SDL_SetRenderDrawBlendMode(render, SDL_BLENDMODE_BLEND);
-    auto res = SDL_RenderGeometry(render, NULL, m_vertices, m_segments + 1, m_indices, m_segments * 3);
+    SDL_SetRenderDrawBlendMode(renderer, SDL_BLENDMODE_BLEND);
+    auto res = SDL_RenderGeometry(renderer, NULL, m_vertices, m_segments + 1, m_indices, m_segments * 3);
     
 }
 

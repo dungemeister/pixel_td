@@ -8,6 +8,10 @@
 #include <unordered_map>
 #include "test.h"
 #include "palette.h"
+#include <memory>
+#include <sstream>
+#include <iomanip>
+
 
 float fps;
 
@@ -25,12 +29,14 @@ Game::Game()
     ,m_pause_menu()
     ,m_running(1)
     ,m_info_font(nullptr)
-    ,m_player_gold_text(nullptr)
-    ,m_slider(nullptr)
     ,m_descriptions_layout(nullptr)
     ,m_map_layout(nullptr)
 {
     init();
+}
+
+Game::~Game(){
+    destroy_game();
 }
 
 void Game::init(){
@@ -88,7 +94,7 @@ void Game::init_render_system(){
     }
 
     m_window = SDL_CreateWindow("Anime TD", m_width, m_height, SDL_WINDOW_OPENGL | SDL_WINDOW_RESIZABLE);
-    m_render_system = new RenderSystem(m_window);
+    m_render_system = std::make_unique<RenderSystem>(m_window);
 
     // load_cursor();
     
@@ -177,7 +183,10 @@ void Game::init_game(){
 }
 
 void Game::destroy_game(){
-    delete m_render_system;
+    SDL_DestroyRenderer(SDL_GetRenderer(m_window));
+    SDL_DestroyWindow(m_window);
+    TTF_Quit();
+    SDL_Quit();
 }
 
 void Game::loop(){
@@ -334,9 +343,8 @@ void Game::handle_draw(){
         break;
     }
     
-    for(auto& layout: m_ui_layouts){
-        layout->draw();
-    }
+    m_player_stats_layout->draw();
+    m_descriptions_layout->draw();
     // TextureTest::test_texture_rendering(r, "assets/rocket_tower.png");
     // SDL_Color cursor_circle_color = {0xF7, 0x62, 0x18, 0x80};
     // bool res = Circle::render_circle_filled(r, m_cursor_pos.x, m_cursor_pos.y, 100, cursor_circle_color);
@@ -597,8 +605,8 @@ void Game::load_hearth_callback(){
             it->second -= value;
             SDL_Log("Health %.1f", it->second);
             
-            m_castle_health_text->SetText(std::to_string(static_cast<int>(it->second)));
-            m_slider->set_value(it->second);
+            // m_castle_health_text->SetText(std::to_string(static_cast<int>(it->second)));
+            // m_slider->set_value(it->second);
             if(it->second <= 0.f){
                 m_running = false;
                 
@@ -622,7 +630,7 @@ void Game::load_gold_callback(){
          
             it->second += value;
             SDL_Log("Gold %.1f", it->second);
-            m_player_gold_text->SetText(std::to_string(static_cast<int>(it->second)));
+            // m_player_gold_text->SetText(std::to_string(static_cast<int>(it->second)));
             return true;
         }
         return false;
@@ -668,32 +676,41 @@ void Game::load_hud_layout(){
     auto level_size = m_cur_level.get_size();
     SDL_FRect rect = {0, 0, 0, 0};
 
-    UILayout* health_layout = new UILayout(this, SDL_GetRenderer(m_window), rect);
-    UIImage* heart_image = new UIImage("assets/heart.png", health_layout);
+    m_player_stats_layout = std::make_unique<UILayout>(this, SDL_GetRenderer(m_window), rect);
+
+    auto health_layout = std::make_unique<UILayout>(this, SDL_GetRenderer(m_window), rect);
+    //Add hearth image
+    auto heart_image = std::make_unique<UIImage>("assets/heart.png", "I_heart");
     heart_image->SetDestSize({64, 64});
-    m_castle_health_text = new UIText(std::to_string(static_cast<int>(m_castle_health)), health_layout);
-    m_castle_health_text->SetFontSize(44);
-    health_layout->PushBackWidgetHorizontal(heart_image);
-    health_layout->PushBackWidgetHorizontal(m_castle_health_text);
-    m_slider = new UISlider(health_layout);
-    m_slider->set_range(0.f, m_max_castle_health);
-    m_slider->set_value(m_castle_health);
-    m_slider->SetSize({health_layout->GetRect().w,
+    //Add health label
+    auto health_label = std::make_unique<UILabel>(std::to_string(static_cast<int>(m_castle_health)), "L_heart");
+    health_label->SetFontSize(44);
+    //Add health slider
+    auto slider = std::make_unique<UISlider>("S_health");
+    slider->set_range(0.f, m_max_castle_health);
+    slider->set_value(m_castle_health);
+    slider->SetSize({health_layout->GetRect().w,
                      health_layout->GetRect().y + 10,
                      100,
                      32});
-    
+
+    health_layout->PushBackWidgetHorizontal(std::move(heart_image));
+    health_layout->PushBackWidgetHorizontal(std::move(health_label));
+    health_layout->PushBackWidgetHorizontal(std::move(slider));
     rect.y = health_layout->GetRect().h;
-    UILayout* gold_layout = new UILayout(this, SDL_GetRenderer(m_window), rect);
-    UIImage* gold_image = new UIImage("assets/coins.png", gold_layout);
+    m_player_stats_layout->AddLayoutVertical(std::move(health_layout));
+    
+    auto gold_layout = std::make_unique<UILayout>(this, SDL_GetRenderer(m_window), rect);
+    auto gold_image = std::make_unique<UIImage>("assets/coins.png", "I_gold");
     gold_image->SetDestSize({64, 64});
-    m_player_gold_text = new UIText(std::to_string(static_cast<int>(m_player_gold)), gold_layout);
-    m_player_gold_text->SetFontSize(44);
-    gold_layout->PushBackWidgetHorizontal(gold_image);
-    gold_layout->PushBackWidgetHorizontal(m_player_gold_text);
+    auto gold_label = std::make_unique<UILabel>(std::to_string(static_cast<int>(m_player_gold)), "L_gold");
+    gold_label->SetFontSize(44);
+    gold_layout->PushBackWidgetHorizontal(std::move(gold_image));
+    gold_layout->PushBackWidgetHorizontal(std::move(gold_label));
+    m_player_stats_layout->AddLayoutVertical(std::move(gold_layout));
 
     SDL_FRect descr_rect = {level_pos.x + level_size.x, 0};
-    m_descriptions_layout = new UILayout(this, SDL_GetRenderer(m_window), descr_rect);
+    m_descriptions_layout = std::make_unique<UILayout>(this, SDL_GetRenderer(m_window), descr_rect);
 
 }
 
@@ -710,26 +727,57 @@ void Game::update_description_layout(const SpriteComponent& sprite, const Entiti
             SDL_Log("WARNING: Sprites for type %d is empty", sprite.type);
         }
         auto layout_pos = m_descriptions_layout->GetPosition();
-        UIImage* descr_img = new UIImage(sprite_path, m_descriptions_layout);
+        // Tower Image
+        auto descr_img = std::make_unique<UIImage>(sprite_path, "I_tower");
         descr_img->SetDestSize({128, 128});
-        m_descriptions_layout->PushBackWidgetHorizontal(descr_img);
-        descr_img->SetPosition({layout_pos.x + 4 + 10, layout_pos.y + 4 + 10});
+        // Image frame
+        auto frame_img = std::make_unique<UIImage>("assets/frame.png", "I_frame");
+        
+        m_descriptions_layout->PushBackWidgetHorizontal(std::move(descr_img));
+        auto t = m_descriptions_layout->GetWidget("I_tower");
+        if(!t){
+            SDL_Log("ERROR: cant find 'I_tower' widget in layout");
+            return;
+        }
+        auto frame_pos = t->GetPosition();
+        frame_img->SetPosition({frame_pos.x - 4, frame_pos.y - 4});
+        frame_img->SetDestSize({128 + 8, 128 + 8});
+        m_descriptions_layout->PushBackWidget(std::move(frame_img));
+        
+        SDL_FRect l = { m_descriptions_layout->GetRect().x,
+                        m_descriptions_layout->GetRect().y + m_descriptions_layout->GetSize().y,
+                        0,
+                        0,
+        };
+        SDL_FRect pos = t->GetSize();
+        auto lower_desc = std::make_unique<UILayout>(this, render, pos);
+        auto name = std::make_unique<UILabel>(name_str, "I_name");
+        lower_desc->PushBackWidgetVertical(std::move(name));
+        // m_descriptions_layout->PushBackWidgetVertical(std::move(name));
 
-        UIText* name = new UIText(name_str, m_descriptions_layout);
-        m_descriptions_layout->PushBackWidgetVertical(name);
-        name->SetPosition({name->GetPosition().x + 10, name->GetPosition().y + 10});
+        //Add damage param
+        std::stringstream dmg_ss;
+        dmg_ss << std::fixed << std::setprecision(1) << "Damage: " << tower->burst_damage;
+        auto damage_text   = std::make_unique<UILabel>(dmg_ss.str(), "T_damage");
+        lower_desc->PushBackWidgetVertical(std::move(damage_text));
+        //Add remove cost param
+        std::stringstream rem_cost_ss;
+        rem_cost_ss << std::fixed << std::setprecision(1) << "Remove cost: " << tower->remove_cost;
+        auto rem_cost_lbl   = std::make_unique<UILabel>(rem_cost_ss.str(), "T_remove_cost");
+        lower_desc->PushBackWidgetVertical(std::move(rem_cost_lbl));
+        //Add projectile speed param
+        std::stringstream proj_speed_ss;
+        proj_speed_ss << std::fixed << std::setprecision(1) << "Proj speed: " << tower->projectile_speed;
+        auto proj_speed_lbl   = std::make_unique<UILabel>(proj_speed_ss.str(), "T_remove_cost");
+        lower_desc->PushBackWidgetVertical(std::move(proj_speed_lbl));
 
-        //Dont push circle to the layout
-        UICircle* tower_circle = new UICircle(m_descriptions_layout);
+        m_descriptions_layout->AddLayoutVertical(std::move(lower_desc));
+        
+        auto tower_circle = std::make_unique<UICircle>("C_radius");
         auto color = SdlWrapper::W_SDL_ConvertToFColor(Colors::Sunset::saffron);
         color.a = 0.5f;
         tower_circle->set_params(sprite.center.get_sdl_point(), tower->radius, color);
-
-        UIImage* frame_img = new UIImage("assets/frame.png", m_descriptions_layout);
-        auto frame_pos = descr_img->GetPosition();
-        frame_img->SetPosition({frame_pos.x - 4, frame_pos.y - 4});
-        frame_img->SetDestSize({128 + 8, 128 + 8});
-
+        m_descriptions_layout->PushBackWidget(std::move(tower_circle));
     }
     else if(auto enemy = std::get_if<EnemyDescription>(&descr)){
         auto name_str = enemy->get_type_string();
@@ -741,22 +789,41 @@ void Game::update_description_layout(const SpriteComponent& sprite, const Entiti
             SDL_Log("WARNING: Sprites for type %d is empty", sprite.type);
         }
         auto layout_pos = m_descriptions_layout->GetRect();
-        UIImage* descr_img = new UIImage(sprite_path, m_descriptions_layout);
+        auto descr_img = std::make_unique<UIImage>(sprite_path, "I_enemy");
         descr_img->SetDestSize({128, 128});
-        m_descriptions_layout->PushBackWidgetHorizontal(descr_img);
-        descr_img->SetPosition({layout_pos.x + 4 + 10, layout_pos.y + 4 + 10});
+        m_descriptions_layout->PushBackWidgetHorizontal(std::move(descr_img));
+        auto t = m_descriptions_layout->GetWidget("I_enemy");
+        if(!t){
+            SDL_Log("ERROR: cant find 'I_enemy' widget in layout");
+            return;
+        }
+        SDL_FRect pos = t->GetSize();
+        auto lower_desc = std::make_unique<UILayout>(this, render, pos);
+        auto name = std::make_unique<UILabel>(name_str, "I_name");
+        lower_desc->PushBackWidgetVertical(std::move(name));
 
-        UILayout* lower_desc = new UILayout(this, render, {descr_img->GetPosition().x,
-                                                           descr_img->GetPosition().y + descr_img->GetSize().h + 10,
-                                                           0,
-                                                           0});
-        UIText* name = new UIText(name_str, lower_desc);
-        lower_desc->PushBackWidgetVertical(name);
-
-        UIImage* frame_img = new UIImage("assets/frame.png", lower_desc);
-        auto frame_pos = descr_img->GetPosition();
+        auto frame_img = std::make_unique<UIImage>("assets/frame.png", "I_frame");
+        auto frame_pos = t->GetPosition();
         frame_img->SetPosition({frame_pos.x - 4, frame_pos.y - 4});
         frame_img->SetDestSize({128 + 8, 128 + 8});
+        lower_desc->PushBackWidget(std::move(frame_img));
+        //Add damage description
+        std::stringstream dmg_ss;
+        dmg_ss << std::fixed << std::setprecision(1) << " Damage: " << enemy->damage;
+        auto dmg_label = std::make_unique<UILabel>(dmg_ss.str(), "L_damage");
+        lower_desc->PushBackWidgetVertical(std::move(dmg_label));
+        //Add bounty description
+        std::stringstream bnt_ss;
+        bnt_ss << std::fixed << std::setprecision(1) << " Bounty: " << enemy->bounty;
+        auto bnt_label = std::make_unique<UILabel>(bnt_ss.str(), "L_bounty");
+        lower_desc->PushBackWidgetVertical(std::move(bnt_label));
+        //Add health description
+        std::stringstream hlth_ss;
+        hlth_ss << std::fixed << std::setprecision(1) << " Max Health: " << enemy->health;
+        auto hlth_label = std::make_unique<UILabel>(hlth_ss.str(), "L_max_health");
+        lower_desc->PushBackWidgetVertical(std::move(hlth_label));
+
+        m_descriptions_layout->AddLayoutVertical(std::move(lower_desc));
     }
 
 }

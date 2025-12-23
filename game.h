@@ -2,6 +2,7 @@
 #include <SDL3/SDL.h>
 #include <SDL3_image/SDL_image.h>
 #include <SDL3_ttf/SDL_ttf.h>
+#include <memory>
 
 #include "render_system.h"
 #include "level.h"
@@ -15,7 +16,7 @@
 #include "hud_render_system.h"
 
 #include "ui_layout.h"
-#include "ui_text.h"
+#include "ui_label.h"
 #include "ui_image.h"
 #include "ui_slider.h"
 #include "ui_circle.h"
@@ -29,7 +30,7 @@ enum GameState{
     Settings,
 };
     Game();
-    ~Game() = default;
+    ~Game();
     void destroy_game();
     void loop();
     void handle_input();
@@ -46,18 +47,18 @@ enum GameState{
     }
 
 private:
-    SDL_Window*           m_window;
-    SDL_Renderer*         m_renderer;
-    SDL_Cursor*           m_cursor;
-    SDL_FPoint            m_cursor_pos;
-    RenderSystem*         m_render_system;
-    AnimationSystem       m_animation_system;
-    MoveSystem            m_move_system;
-    CastleDamageSystem    m_castle_damage_system;
-    EnemyCollistionSystem m_enemy_collision_system;
-    SpawnSystem           m_spawn_system;
-    FiringSystem          m_firing_system;
-    Entities              m_objects;
+    SDL_Window*                           m_window;
+    SDL_Renderer*                         m_renderer;
+    SDL_Cursor*                           m_cursor;
+    SDL_FPoint                            m_cursor_pos;
+    std::unique_ptr<RenderSystem>         m_render_system;
+    AnimationSystem                       m_animation_system;
+    MoveSystem                            m_move_system;
+    CastleDamageSystem                    m_castle_damage_system;
+    EnemyCollistionSystem                 m_enemy_collision_system;
+    SpawnSystem                           m_spawn_system;
+    FiringSystem                          m_firing_system;
+    Entities                              m_objects;
 
     std::vector<Level> m_levels;
     Level              m_cur_level;
@@ -68,12 +69,10 @@ private:
     HudSystem           m_pause_menu;
     HudSystem           m_main_menu;
 
-    UIText* m_player_gold_text;
-    UIText* m_castle_health_text;
-    UISlider* m_slider;
-    std::vector<UILayout*>  m_ui_layouts;
-    UILayout*               m_descriptions_layout;
-    UILayout*               m_map_layout;
+    std::vector<UILayout*>      m_ui_layouts;
+    std::unique_ptr<UILayout>   m_descriptions_layout;
+    std::unique_ptr<UILayout>   m_player_stats_layout;
+    std::unique_ptr<UILayout>   m_map_layout;
 
     TowerDescription* m_selected_tower;
     std::unordered_map<SDL_Scancode, TowerDescription> m_towers_scancode;
