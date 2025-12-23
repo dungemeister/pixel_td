@@ -50,7 +50,7 @@ void Game::init_pause_menu(){
 }
 
 void Game::load_cursor(){
-    SDL_Surface* orig_surface = IMG_Load("assets/quot-stickers.png");
+    SDL_Surface* orig_surface = IMG_Load("assets/cursor.png");
 
     if(!orig_surface){
         SDL_Log("IMG_Load: %s", SDL_GetError());
@@ -96,7 +96,7 @@ void Game::init_render_system(){
     m_window = SDL_CreateWindow("Anime TD", m_width, m_height, SDL_WINDOW_OPENGL | SDL_WINDOW_RESIZABLE);
     m_render_system = std::make_unique<RenderSystem>(m_window);
 
-    // load_cursor();
+    load_cursor();
     
 }
 
@@ -605,8 +605,6 @@ void Game::load_hearth_callback(){
             it->second -= value;
             SDL_Log("Health %.1f", it->second);
             
-            // m_castle_health_text->SetText(std::to_string(static_cast<int>(it->second)));
-            // m_slider->set_value(it->second);
             if(auto widget = m_player_stats_layout->GetWidget("L_heart"); widget){
                 if(auto health_label = dynamic_cast<UILabel*>(widget)){
                     std::stringstream health;
@@ -628,8 +626,8 @@ void Game::load_hearth_callback(){
 void Game::load_gold_callback(){
     m_components_data.emplace(ComponentType::PLAYER_GOLD, m_player_gold);
     m_components_callbacks.emplace(ComponentType::PLAYER_GOLD, [this](float value){
-        /*Callback used for increase/decrease player gold. Adding tower decrease gold and 
-        killing enemies increase gold*/
+        /*Callback used for increase/decrease player gold. Adding tower decreases gold and 
+        killing enemies increases gold*/
 
         auto it = m_components_data.find(ComponentType::PLAYER_GOLD);
         if(it != m_components_data.end() &&
@@ -637,7 +635,6 @@ void Game::load_gold_callback(){
          
             it->second += value;
             SDL_Log("Gold %.1f", it->second);
-            // m_player_gold_text->SetText(std::to_string(static_cast<int>(it->second)));
             if(auto widget = m_player_stats_layout->GetWidget("L_gold"); widget){
                 if(auto gold_label = dynamic_cast<UILabel*>(widget)){
                     std::stringstream gold;
