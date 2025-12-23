@@ -607,6 +607,13 @@ void Game::load_hearth_callback(){
             
             // m_castle_health_text->SetText(std::to_string(static_cast<int>(it->second)));
             // m_slider->set_value(it->second);
+            if(auto widget = m_player_stats_layout->GetWidget("L_heart"); widget){
+                if(auto health_label = dynamic_cast<UILabel*>(widget)){
+                    std::stringstream health;
+                    health << std::fixed << std::setprecision(0) << it->second;
+                    health_label->SetText(health.str());
+                }
+            }
             if(it->second <= 0.f){
                 m_running = false;
                 
@@ -631,6 +638,13 @@ void Game::load_gold_callback(){
             it->second += value;
             SDL_Log("Gold %.1f", it->second);
             // m_player_gold_text->SetText(std::to_string(static_cast<int>(it->second)));
+            if(auto widget = m_player_stats_layout->GetWidget("L_gold"); widget){
+                if(auto gold_label = dynamic_cast<UILabel*>(widget)){
+                    std::stringstream gold;
+                    gold << std::fixed << std::setprecision(0) << it->second;
+                    gold_label->SetText(gold.str());
+                }
+            }
             return true;
         }
         return false;
