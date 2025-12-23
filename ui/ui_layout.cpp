@@ -7,12 +7,12 @@ UILayout::UILayout(Game* game, SDL_Renderer* renderer, SDL_FRect rect)
     ,m_state(UILayout::State::EActive)
     ,m_rect(rect)
 {
-    GetGame()->add_ui(this);
+    // GetGame()->add_ui(this);
 }
 
 UILayout::~UILayout(){
     RemoveWidgets();
-    GetGame()->remove_ui(this);
+    // GetGame()->remove_ui(this);
 }
 
 void UILayout::PushBackWidgetVertical(std::unique_ptr<UIWidget> widget){
@@ -47,8 +47,8 @@ void UILayout::PushBackWidget(std::unique_ptr<UIWidget> widget){
     widget->SetLayout(this);
     widget->Update(0.f);
 
-    m_rect.w += widget->GetSizePadding().w;
-    m_rect.h = std::max(m_rect.h, widget->GetSizePadding().h);
+    m_rect.w = std::max(m_rect.w + m_rect.x, widget->GetPosition().x + widget->GetSizePadding().w);
+    m_rect.h = std::max(m_rect.h + m_rect.y, widget->GetPosition().y + widget->GetSizePadding().h);
     m_widgets.emplace_back(std::move(widget));
 }
 

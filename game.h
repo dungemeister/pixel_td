@@ -37,14 +37,14 @@ enum GameState{
     void handle_update();
     void handle_draw();
 
-    void add_ui(UILayout* ui){
-        m_ui_layouts.emplace_back(ui);
-    }
+    // void add_ui(UILayout* ui){
+    //     m_ui_layouts.emplace_back(ui);
+    // }
 
-    void remove_ui(UILayout* ui){
-        auto it = std::find(m_ui_layouts.begin(), m_ui_layouts.end(), ui);
-        m_ui_layouts.erase(it);
-    }
+    // void remove_ui(UILayout* ui){
+    //     auto it = std::find(m_ui_layouts.begin(), m_ui_layouts.end(), ui);
+    //     m_ui_layouts.erase(it);
+    // }
 
 private:
     SDL_Window*                           m_window;
@@ -69,7 +69,7 @@ private:
     HudSystem           m_pause_menu;
     HudSystem           m_main_menu;
 
-    std::vector<UILayout*>      m_ui_layouts;
+    // std::vector<UILayout*>      m_ui_layouts;
     std::unique_ptr<UILayout>   m_descriptions_layout;
     std::unique_ptr<UILayout>   m_player_stats_layout;
     std::unique_ptr<UILayout>   m_map_layout;

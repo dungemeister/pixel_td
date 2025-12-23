@@ -16,6 +16,12 @@ UIImage::UIImage(const std::string& sprite, const std::string& id)
     load_texture(sprite);
 }
 
+UIImage::~UIImage(){
+    for(const auto &[_, text]: m_sprites){
+        SDL_DestroyTexture(text);
+    }
+}
+
 void UIImage::Update(float deltatime){
     load_texture(m_cur_sprite);
 }

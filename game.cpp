@@ -675,7 +675,7 @@ void Game::load_hud_layout(){
     auto level_pos = m_cur_level.get_position();
     auto level_size = m_cur_level.get_size();
     SDL_FRect rect = {0, 0, 0, 0};
-
+    //Load Player Stats Layout
     m_player_stats_layout = std::make_unique<UILayout>(this, SDL_GetRenderer(m_window), rect);
 
     auto health_layout = std::make_unique<UILayout>(this, SDL_GetRenderer(m_window), rect);
@@ -709,6 +709,7 @@ void Game::load_hud_layout(){
     gold_layout->PushBackWidgetHorizontal(std::move(gold_label));
     m_player_stats_layout->AddLayoutVertical(std::move(gold_layout));
 
+    //Load Entites Description Layout
     SDL_FRect descr_rect = {level_pos.x + level_size.x, 0};
     m_descriptions_layout = std::make_unique<UILayout>(this, SDL_GetRenderer(m_window), descr_rect);
 
@@ -739,18 +740,14 @@ void Game::update_description_layout(const SpriteComponent& sprite, const Entiti
             SDL_Log("ERROR: cant find 'I_tower' widget in layout");
             return;
         }
+        SDL_FRect pos = t->GetSize();
+        auto lower_desc = std::make_unique<UILayout>(this, render, pos);
+
         auto frame_pos = t->GetPosition();
         frame_img->SetPosition({frame_pos.x - 4, frame_pos.y - 4});
         frame_img->SetDestSize({128 + 8, 128 + 8});
-        m_descriptions_layout->PushBackWidget(std::move(frame_img));
+        lower_desc->PushBackWidget(std::move(frame_img));
         
-        SDL_FRect l = { m_descriptions_layout->GetRect().x,
-                        m_descriptions_layout->GetRect().y + m_descriptions_layout->GetSize().y,
-                        0,
-                        0,
-        };
-        SDL_FRect pos = t->GetSize();
-        auto lower_desc = std::make_unique<UILayout>(this, render, pos);
         auto name = std::make_unique<UILabel>(name_str, "I_name");
         lower_desc->PushBackWidgetVertical(std::move(name));
         // m_descriptions_layout->PushBackWidgetVertical(std::move(name));
@@ -799,14 +796,16 @@ void Game::update_description_layout(const SpriteComponent& sprite, const Entiti
         }
         SDL_FRect pos = t->GetSize();
         auto lower_desc = std::make_unique<UILayout>(this, render, pos);
-        auto name = std::make_unique<UILabel>(name_str, "I_name");
-        lower_desc->PushBackWidgetVertical(std::move(name));
 
         auto frame_img = std::make_unique<UIImage>("assets/frame.png", "I_frame");
         auto frame_pos = t->GetPosition();
         frame_img->SetPosition({frame_pos.x - 4, frame_pos.y - 4});
         frame_img->SetDestSize({128 + 8, 128 + 8});
         lower_desc->PushBackWidget(std::move(frame_img));
+        
+        auto name = std::make_unique<UILabel>(name_str, "I_name");
+        lower_desc->PushBackWidgetVertical(std::move(name));
+
         //Add damage description
         std::stringstream dmg_ss;
         dmg_ss << std::fixed << std::setprecision(1) << " Damage: " << enemy->damage;

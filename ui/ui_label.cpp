@@ -21,7 +21,6 @@ UILabel::UILabel(const std::string& text, const std::string& id)
 
 UILabel::~UILabel(){
     SDL_DestroyTexture(m_texture);
-    TTF_CloseFont(m_font);
 }
 
 void UILabel::UpdateTexture(){

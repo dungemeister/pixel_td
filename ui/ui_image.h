@@ -8,7 +8,7 @@ class UIImage: public UIWidget{
 public:
     UIImage(const std::string& id);
     UIImage(const std::string& sprite, const std::string& id);
-
+    ~UIImage();
     void Update(float deltatime) override;
     void Draw(SDL_Renderer* renderer) override;
     void AddSprite(const std::string& sprite);
