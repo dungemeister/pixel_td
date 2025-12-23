@@ -818,9 +818,19 @@ void Game::update_description_layout(const SpriteComponent& sprite, const Entiti
         lower_desc->PushBackWidgetVertical(std::move(bnt_label));
         //Add health description
         std::stringstream hlth_ss;
-        hlth_ss << std::fixed << std::setprecision(1) << " Max Health: " << enemy->health;
+        hlth_ss << std::fixed << std::setprecision(1) << " Max Health: " << enemy->max_health;
         auto hlth_label = std::make_unique<UILabel>(hlth_ss.str(), "L_max_health");
         lower_desc->PushBackWidgetVertical(std::move(hlth_label));
+        //Add current health description
+        std::stringstream cur_hlth_ss;
+        cur_hlth_ss << std::fixed << std::setprecision(1) << " Health: " << enemy->cur_health;
+        auto cur_hlth_label = std::make_unique<UILabel>(cur_hlth_ss.str(), "L_cur_health");
+        lower_desc->PushBackWidgetVertical(std::move(cur_hlth_label));
+        //Add speed description
+        std::stringstream spd_ss;
+        spd_ss << std::fixed << std::setprecision(1) << " Speed: " << enemy->speed;
+        auto spd_label = std::make_unique<UILabel>(spd_ss.str(), "L_speed");
+        lower_desc->PushBackWidgetVertical(std::move(spd_label));
 
         m_descriptions_layout->AddLayoutVertical(std::move(lower_desc));
     }

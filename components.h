@@ -253,7 +253,8 @@ struct TowerDescription{
 };
 
 struct EnemyDescription{
-    float health;
+    float max_health;
+    float cur_health;
     float regeneration;
     float damage;
     float speed;
@@ -451,8 +452,8 @@ Entities() {
             SDL_Log("Fail to get enemy type %d", type);
         else{
             auto descr = enemy_descr->second;
-            m_health[id].max_health = descr.health;
-            m_health[id].cur_health = m_health[id].max_health;
+            m_health[id].max_health = descr.max_health;
+            m_health[id].cur_health = descr.cur_health;
             m_health[id].regeneration = descr.regeneration;
             m_sprites[id].flag |= fSpriteHealthBar;
             m_moves[id].speed = descr.speed;
@@ -857,37 +858,44 @@ Entities() {
                 enemy.armor  = 5.f;
                 enemy.bounty = 2.f;
                 enemy.damage = 2.f;
-                enemy.health = 3.f;
+                enemy.max_health = 3.f;
+                enemy.cur_health = 3.f;
                 enemy.speed  = 125.f;
             break;
             case EnemyType::BEE:
                 enemy.armor  = 2.f;
                 enemy.bounty = 1.f;
                 enemy.damage = 1.f;
-                enemy.health = 1.f;
+                enemy.max_health = 1.f;
+                enemy.cur_health = 1.f;
                 enemy.speed  = 150.f;
             break;
             case EnemyType::DRAGONIT:
                 enemy.armor  = 8.f;
                 enemy.bounty = 3.f;
                 enemy.damage = 2.f;
-                enemy.health = 5.f;
+                enemy.max_health = 5.f;
+                enemy.cur_health = 5.f;
                 enemy.speed  = 100.f;
             break;
             case EnemyType::SERJANT:
                 enemy.armor  = 10.f;
                 enemy.bounty = 8.f;
                 enemy.damage = 5.f;
-                enemy.health = 15.f;
+                enemy.max_health = 15.f;
+                enemy.cur_health = 15.f;
                 enemy.speed  = 75.f;
             break;
             case EnemyType::TANK:
                 enemy.armor  = 15.f;
                 enemy.bounty = 15.f;
                 enemy.damage = 10.f;
-                enemy.health = 25.f;
+                enemy.max_health = 25.f;
+                enemy.cur_health = 25.f;
                 enemy.speed  = 50.f;
             break;
+            default:
+                SDL_Log("WARNING: Unknown enemy type %d", type);
         }
         m_enemies_descr.emplace(type, enemy);
 

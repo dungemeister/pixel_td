@@ -45,6 +45,10 @@ public:
 
                             auto burst_damage = objects.m_firings[id].descr->burst_damage;
                             objects.m_health[enemy_id].cur_health -= burst_damage;
+                            if(auto enemy_descr = std::get_if<EnemyDescription>(&objects.m_descriptions[enemy_id])){
+                                enemy_descr->cur_health = objects.m_health[enemy_id].cur_health;
+                            }
+                            
                             if(objects.m_health[enemy_id].cur_health <= 0.f){
                                 auto concrete_enemy_type = objects.m_concrete_types[enemy_id];
                                 if(!std::holds_alternative<EnemyType>(concrete_enemy_type)){
