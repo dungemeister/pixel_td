@@ -9,6 +9,8 @@ UILabel::UILabel(const std::string& id)
     ,m_font(nullptr)
     ,m_font_size(16)
     ,m_text()
+    ,m_background(false)
+    ,m_border(false)
 {
     m_color = Colors::OceanSunset::bittersweet;
 }
@@ -78,6 +80,7 @@ void UILabel::DrawText(SDL_Renderer* renderer){
 
 void UILabel::DrawBorder(SDL_Renderer* renderer){
     if(!m_layout) return;
+    if(!m_border) return;
 
     SDL_Color color = Colors::OceanSunset::midnight_green;
     SDL_SetRenderDrawColor(renderer, color.r, color.g, color.b, color.a);
@@ -86,6 +89,7 @@ void UILabel::DrawBorder(SDL_Renderer* renderer){
 
 void UILabel::DrawBackground(SDL_Renderer* renderer){
     if(!m_layout) return;
+    if(!m_background) return;
 
     SDL_SetRenderDrawBlendMode(renderer, SDL_BLENDMODE_BLEND);
     SDL_SetRenderDrawColor(renderer, m_color.r, m_color.g, m_color.b, 33); // Белый цвет

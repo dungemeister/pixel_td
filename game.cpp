@@ -581,6 +581,7 @@ void Game::load_towers(){
     id = m_objects.add_tower(m_cur_level, TowerType::ICE_TOWER_DATA, {942.076, 378.737});
     id = m_objects.add_tower(m_cur_level, TowerType::FIRE_TOWER_DATA, {615.781, 267.516});
     id = m_objects.add_tower(m_cur_level, TowerType::POISON_TOWER_DATA, {791.7, 254.0});
+    id = m_objects.add_tower(m_cur_level, TowerType::CLOUD_TOWER_DATA, {1056.9, 494.2});
 }
 
 void Game::register_type(SpriteType type, const std::vector<std::string>& sprites){
@@ -821,6 +822,9 @@ void Game::update_description_layout(const SpriteComponent& sprite, const Entiti
         std::stringstream dmg_ss;
         dmg_ss << std::fixed << std::setprecision(1) << " Damage: " << enemy->damage;
         auto dmg_label = std::make_unique<UILabel>(dmg_ss.str(), "L_damage");
+        dmg_label->SetColor(Colors::OceanSunset::atomic_tangerine);
+        dmg_label->SetBackgroundState(false);
+        dmg_label->SetBorderState(false);
         lower_desc->PushBackWidgetVertical(std::move(dmg_label));
         //Add bounty description
         std::stringstream bnt_ss;
