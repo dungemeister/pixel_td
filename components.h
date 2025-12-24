@@ -228,10 +228,22 @@ enum FiringType{
 };
 
 struct HealthComponent{
+    enum DeadPendingReason{
+        //Reasons for enemies
+        KILLED    = 1 << 0,
+        PASSED    = 1 << 1,
+        //Reasons for projectiles
+        EXPLOUDED = 1 << 2,
+        //Reasons for towers
+        SELLED    = 1 << 3,
+
+    };
+
     float max_health;
     float cur_health;
     float regeneration;
     int alive;
+    DeadPendingReason dead_pending;
 };
 
 struct TowerDescription{
@@ -469,6 +481,10 @@ Entities() {
 
     void set_object_alive_state(EntityID id, int state){
         m_health[id].alive = state;
+    }
+
+    void set_object_dead_pending_reason(EntityID id, HealthComponent::DeadPendingReason reason){
+        m_health[id].dead_pending = reason;
     }
 
     EntityID spawn_enemies_targeted(const Level& level, const Vector2D& target, const SDL_FPoint& spawn_pos, EnemyType type){
@@ -838,8 +854,8 @@ Entities() {
                 tower.type = type;
                 tower.slowing_magnitude = 0.20f;
                 tower.slowing_time = 1.f;
-                tower.periodic_damage = 0;
-                tower.periodic_time = 0;
+                tower.periodic_damage = 2.f;
+                tower.periodic_time = 5.f;
                 tower.burst_damage = 1.f;
                 tower.projectile_speed = 250.f;
                 tower.firing_type = FiringType::eProjectile;
@@ -1002,5 +1018,8 @@ Entities() {
         } 
         return m_moves[id].speed * m_moves[id].speed_magnitude;
     }
+
+    bool is_object_dead_pending(EntityID id) const { return m_health[id].dead_pending != 0; }
+    
 };
 

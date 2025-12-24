@@ -323,8 +323,9 @@ void Game::update_game(){
     m_firing_system.update(m_objects, m_cur_level, deltatime);
     m_move_system.update(m_objects, m_cur_level, deltatime);
     m_enemy_collision_system.update(m_objects, m_cur_level, deltatime);
-    m_castle_damage_system.update(m_objects, m_cur_level, m_buff_system, deltatime, m_components_callbacks);
+    m_castle_damage_system.update(m_objects, m_cur_level, m_buff_system, deltatime);
     m_buff_system.update(m_objects, deltatime);
+    m_drattle_system.update(m_objects, deltatime, m_components_callbacks);
     m_animation_system.update(m_objects, deltatime);
     
 }

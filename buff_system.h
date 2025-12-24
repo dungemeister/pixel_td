@@ -65,11 +65,12 @@ bool apply_buff(const BuffComponent& buff, Entities& objects, float deltatime){
         case BuffType::IGNITE:
             // SDL_Log("fmod :%.3f; deltatime :%.3f", value, deltatime);
 
-            if(objects.is_alive(buff.id) && value < deltatime){
+            if(objects.is_alive(buff.id) && value <= deltatime){
                 SDL_Log("Ignite tick ID[%ld]", buff.id);
                 objects.damage_entity(buff.id, buff.magnitude * TICK_INTERVAL);
                 if(objects.get_current_health(buff.id) < 0.f){
-                    objects.reset_object(buff.id);
+                    objects.set_object_alive_state(buff.id, 0);
+                    objects.set_object_dead_pending_reason(buff.id, HealthComponent::DeadPendingReason::KILLED);
                 }
                 
             }
