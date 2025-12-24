@@ -90,7 +90,7 @@ private:
     float       m_castle_health = 100.f;
     const float m_max_castle_health = 100.f;
     
-    float m_player_gold   = 10.f;
+    float m_player_gold   = 40.f;
 
     float m_hud_font_size = 24.f;
     TTF_Font* m_info_font;

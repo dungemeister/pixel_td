@@ -14,12 +14,14 @@
 typedef size_t EntityID;
 
 enum SpriteFlag{
-    fUpperLeftSprite = 1 << 0,
-    fCenterSprite    = 1 << 1,
-    fSpriteContour   = 1 << 2,
-    fSpriteStencil   = 1 << 3,
-    fSpriteBorder    = 1 << 4,
-    fSpriteHealthBar = 1 << 5,
+    fUpperLeftSprite   = 1 << 0,
+    fCenterSprite      = 1 << 1,
+    fSpriteContour     = 1 << 2,
+    fSpriteStencil     = 1 << 3,
+    fSpriteBorder      = 1 << 4,
+    fSpriteHealthBar   = 1 << 5,
+    fSpriteTone        = 1 << 6,
+    fSpriteCooldownBar = 1 << 7,
 };
 
 enum SpriteLayer{
@@ -46,6 +48,7 @@ struct PositionComponent{
 struct VersionComponent{
     size_t version;
     bool operator==(const VersionComponent& other) { return other.version == version; }
+    bool operator!=(const VersionComponent& other) { return other.version != version; }
 };
 
 struct MoveComponent{
@@ -310,6 +313,7 @@ enum BuffType{
 
 struct BuffComponent{
     EntityID id;
+    VersionComponent version;
     BuffType type;
     float duration;
     float elapsed_time;
@@ -485,7 +489,7 @@ Entities() {
         m_sprites[id].colG = 0.6;
         m_sprites[id].colB = 0.6;
         m_sprites[id].angle = 0;
-        m_sprites[id].flag = fUpperLeftSprite;
+        m_sprites[id].flag = fUpperLeftSprite | fSpriteTone;
         m_sprites[id].layer = SpriteLayer::ENTITY;
         m_sprites[id].anim_index = -1;
         m_systems[id] |= eSpriteSystem;
@@ -586,7 +590,7 @@ Entities() {
             m_sprites[id].colG = 0.6;
             m_sprites[id].colB = 0.6;
             m_sprites[id].angle = 0;
-            m_sprites[id].flag = fUpperLeftSprite;
+            m_sprites[id].flag = fUpperLeftSprite | fSpriteCooldownBar;
             m_sprites[id].layer = SpriteLayer::ENTITY;
             m_sprites[id].anim_index = -1;
             m_systems[id] |= eSpriteSystem;
@@ -629,6 +633,10 @@ Entities() {
                 break;
                 case TowerType::CLOUD_TOWER_DATA:
                     tower_descr = get_tower_descr(TowerType::CLOUD_TOWER_DATA);
+                    m_animations[id].cur_frame = 0.f;
+                    m_animations[id].frames_size = 5;
+                    m_animations[id].fps = 3;
+
                     m_sprites[id].type = SpriteType::CLOUD_TOWER;
                     m_firings[id].interval = tower_descr->firing_interval;
                     m_firings[id].cooldown = m_firings[id].interval;
@@ -639,6 +647,7 @@ Entities() {
                 break;
             }
 
+            m_sprites[id].value = m_firings[id].cooldown;
             m_descriptions[id] = TowerDescription(*tower_descr);
 
             m_types[id] = EntityGlobalType::FRIEND_ENTITY;
@@ -824,14 +833,14 @@ Entities() {
                 tower.cost = 5;
                 tower.firing_interval = 1.f;
                 tower.level = 0;
-                tower.radius = 250.f;
+                tower.radius = 150.f;
                 tower.remove_cost = tower.cost * 0.5f;
                 tower.type = type;
-                tower.slowing_magnitude = 0.90f;
+                tower.slowing_magnitude = 0.20f;
                 tower.slowing_time = 1.f;
                 tower.periodic_damage = 0;
                 tower.periodic_time = 0;
-                tower.burst_damage = 2.f;
+                tower.burst_damage = 1.f;
                 tower.projectile_speed = 250.f;
                 tower.firing_type = FiringType::eProjectile;
                 tower.experience_distribution.emplace(0, 150.f);
@@ -843,7 +852,7 @@ Entities() {
                 tower.cost = 7;
                 tower.firing_interval = 1.f;
                 tower.level = 0;
-                tower.radius = 250.f;
+                tower.radius = 200.f;
                 tower.remove_cost = tower.cost * 0.5f;
                 tower.type = type;
                 tower.slowing_magnitude = 0.10f;
@@ -860,9 +869,9 @@ Entities() {
             break;
             case TowerType::CLOUD_TOWER_DATA:
                 tower.cost = 15;
-                tower.firing_interval = 3.f;
+                tower.firing_interval = 2.5f;
                 tower.level = 0;
-                tower.radius = 100.f;
+                tower.radius = 250.f;
                 tower.remove_cost = tower.cost * 0.5f;
                 tower.type = type;
                 tower.slowing_magnitude = 0.25f;
@@ -870,7 +879,7 @@ Entities() {
                 tower.periodic_damage = 0.5f;
                 tower.periodic_time = 3.f;
                 tower.burst_damage = 8.f;
-                tower.projectile_speed = 200.f;
+                tower.projectile_speed = 400.f;
                 tower.firing_type = FiringType::eProjectile;
                 tower.experience_distribution.emplace(0, 150.f);
                 tower.experience_distribution.emplace(1, 300.f);

@@ -4,6 +4,7 @@
 #include <SDL3/SDL_gpu.h>
 #include "figures.h"
 #include "level.h"
+#include "palette.h"
 
 void RenderSystem::render(const Entities& objects){
     clean_frame();
@@ -24,14 +25,20 @@ void RenderSystem::render(const Entities& objects){
     }
     for(int id = 0; id < m_entity_sprites.size(); id++){
         if(!render_sprite(m_entity_sprites[id])){
-            SDL_Log("render entity sprite: %s", SDL_GetError());
+            SDL_Log("WARNING: render entity sprite: %s", SDL_GetError());
         }
-        if((m_entity_sprites[id].flag & fSpriteHealthBar) == 0) continue;
-        
-        if(!render_health_bar(m_entity_sprites[id], m_entity_hps[id])){
-            SDL_Log("render entity health: %s", SDL_GetError());
+        if(m_entity_sprites[id].flag & fSpriteHealthBar){
+            if(!render_health_bar(m_entity_sprites[id], m_entity_hps[id])){
+                SDL_Log("WARNING: render entity health bar: %s", SDL_GetError());
 
+            }
         }
+        if(m_entity_sprites[id].flag & fSpriteCooldownBar){
+            if(!render_cooldown_bar(m_entity_sprites[id])){
+                SDL_Log("WARNING: render entity cooldown bar: %s", SDL_GetError());
+            }
+        }
+        
     }
     for(auto& sprite_data: m_proj_sprites){
         if(!render_sprite(sprite_data)){
@@ -174,7 +181,8 @@ bool RenderSystem::render_sprite(const SpriteComponent& sprite){
         render_rectangle({sprite.posX, sprite.posY, sprite.width, sprite.height},
                         2.f,
                         0.f,
-                        false);
+                        false,
+                        {0xFF, 0x00, 0xFF, 0xFF});
     }
     return res;
 }
@@ -333,8 +341,14 @@ bool RenderSystem::render_sprite_texture(const SpriteComponent& sprite, SDL_Text
     SDL_FPoint center = {dest_rect.w / 2, dest_rect.h / 2};
     float angle = sprite.angle;
     SDL_FlipMode mode = SDL_FLIP_NONE;
-    res = SDL_RenderTextureRotated(m_renderer, text, nullptr, &dest_rect, angle, &center, mode);
+    if(sprite.flag & fSpriteTone){
+        SDL_SetTextureBlendMode(text, SDL_BLENDMODE_BLEND);
+        SDL_SetTextureColorMod(text, sprite.colR * 255, sprite.colG * 255, sprite.colB * 255);
+    }
+    
 
+    res = SDL_RenderTextureRotated(m_renderer, text, nullptr, &dest_rect, angle, &center, mode);
+    
     if(sprite.flag & fSpriteBorder){
         SDL_Surface* surface = SDL_CreateSurface(dest_rect.w, dest_rect.h, SDL_PIXELFORMAT_RGBA32);
         if (!surface) {
@@ -390,7 +404,7 @@ size_t RenderSystem::get_type_sprites_size(SpriteType type){
     return size;
 }
 
-void RenderSystem::render_rectangle(SDL_FRect dest_rect, float width, float angle, bool filled){
+void RenderSystem::render_rectangle(SDL_FRect dest_rect, float width, float angle, bool filled, const SDL_Color& color){
     SDL_Surface* surface = SDL_CreateSurface(dest_rect.w, dest_rect.h, SDL_PIXELFORMAT_RGBA32);
     if (!surface) {
         printf("Failed to create surface: %s\n", SDL_GetError());
@@ -412,7 +426,13 @@ void RenderSystem::render_rectangle(SDL_FRect dest_rect, float width, float angl
 
     SDL_FPoint center = {dest_rect.w / 2, dest_rect.h / 2};
     // Заполняем весь прямоугольник цветом
-    SDL_FillSurfaceRect(surface, &outer_rect, SDL_MapRGBA(SDL_GetPixelFormatDetails(surface->format), nullptr, 0xFF, 0, 0, 0xFF));
+    SDL_FillSurfaceRect(surface, &outer_rect, SDL_MapRGBA(SDL_GetPixelFormatDetails(surface->format),
+                                                          nullptr,
+                                                          color.r,
+                                                          color.g,
+                                                          color.b,
+                                                          color.a));
+
     if(!filled){
         // Вырезаем внутреннюю часть чтобы получить контур
         SDL_FillSurfaceRect(surface, &inner_rect, SDL_MapRGBA(SDL_GetPixelFormatDetails(surface->format), nullptr, 0, 0, 0, 0));
@@ -425,11 +445,11 @@ void RenderSystem::render_rectangle(SDL_FRect dest_rect, float width, float angl
     SDL_DestroyTexture(border_text);
 }
 
-bool RenderSystem::render_bar(SDL_FRect rect, float angle, float percentage, float height_scale=0.1f){
+bool RenderSystem::render_bar(SDL_FRect rect, float angle, float percentage, const SDL_Color& color, float height_scale=0.1f){
     SDL_FRect border_rect = {rect.x, rect.y, rect.w, rect.h * height_scale};
     SDL_FRect filled_rect = {rect.x, rect.y, rect.w * percentage, rect.h * height_scale};
-    render_rectangle(border_rect, 2.f, angle, false);
-    render_rectangle(filled_rect, 2.f, angle, true);
+    render_rectangle(border_rect, 2.f, angle, false, {211, 211, 211, 211});
+    render_rectangle(filled_rect, 2.f, angle, true,  color);
 
     return true;
 }
@@ -441,6 +461,18 @@ bool RenderSystem::render_health_bar(const SpriteComponent& sprite, const Health
     
     SDL_FRect dest_rect= {sprite.posX, sprite.posY, sprite.width * sprite.scale, sprite.height * sprite.scale};
 
-    render_bar(dest_rect, sprite.angle, percentage);
+    render_bar(dest_rect, sprite.angle, percentage, Colors::Sunset::folly);
     return true;
+}
+
+bool RenderSystem::render_cooldown_bar(const SpriteComponent& sprite){
+    if(auto percentage = std::get_if<float>(&sprite.value)){
+        if(*percentage >= 1.f) return true;
+        
+        SDL_FRect dest_rect= {sprite.posX, sprite.posY, sprite.width * sprite.scale, sprite.height * sprite.scale};
+
+        render_bar(dest_rect, sprite.angle, (1.f - *percentage), Colors::Sunset::saffron);
+        return true;
+    }
+    return false;
 }

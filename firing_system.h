@@ -41,10 +41,12 @@ struct FiringSystem{
                         else{
                             firing_comp.cooldown = 0;
                         }
+                        
                     break;
                 }
                 
             }
+            objects.m_sprites[id].value = firing_comp.cooldown / firing_comp.interval;
         }
     }
 

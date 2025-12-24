@@ -49,19 +49,23 @@ public:
                             switch(objects.m_sprites[id].type){
                                 case SpriteType::FIRE_PROJECTILE:
                                     buffs.add_buff(enemy_id,
+                                                   objects.get_version_component(enemy_id),
                                                    BuffType::IGNITE,
                                                    descr->periodic_damage,
                                                    descr->periodic_time);
                                 break;
                                 case SpriteType::ICE_PROJECTILE:
                                     buffs.add_buff(enemy_id,
+                                                   objects.get_version_component(enemy_id),
                                                    BuffType::SLOW,
                                                    descr->slowing_magnitude,
                                                    descr->slowing_time);
                                     buffs.add_buff(enemy_id,
+                                                   objects.get_version_component(enemy_id),
                                                    BuffType::IGNITE,
                                                    descr->periodic_damage,
                                                    descr->periodic_time);
+
                                 break;
                             }
 

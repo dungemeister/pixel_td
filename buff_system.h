@@ -3,13 +3,14 @@
 
 struct BuffSystem{
 
-void add_buff(EntityID id, BuffType type, float magnitude,float duration = -1.f){
+void add_buff(EntityID id, VersionComponent version, BuffType type, float magnitude,float duration = -1.f){
     if(duration == -1.f){
         duration = s_buff_info[static_cast<int>(type)].duration;
     }
 
     BuffComponent buff = {
         .id = id,
+        .version = version,
         .type = type,
         .duration = duration,
         .elapsed_time = 0.f,
@@ -31,13 +32,15 @@ void update(Entities& objects, float deltatime){
         buff.duration -= deltatime;
         buff.elapsed_time += deltatime;
         //Apply buff to object
-        apply_buff(buff, objects, deltatime);
+        if(!apply_buff(buff, objects, deltatime)){
+            erase_buff(buff);
+            i--;
+        }
         //Remove expired multiplicative buff or remove buff from not alive object 
         if(buff.duration <= 0.f){
 
             remove_buff(buff, objects);
-            std::swap(m_buffs[i], m_buffs.back());
-            m_buffs.pop_back();
+            erase_buff(buff);
             i--;
         }
 
@@ -48,7 +51,14 @@ void add_pending_buff(const BuffComponent&& buff){
     m_pending_buffs.emplace_back(buff);
 }
 
-void apply_buff(const BuffComponent& buff, Entities& objects, float deltatime){
+bool apply_buff(const BuffComponent& buff, Entities& objects, float deltatime){
+    if(objects.get_version_component(buff.id) != buff.version)
+    {
+        SDL_Log("WARNING: object version [%ld], buff version [%ld]",
+                objects.get_version_component(buff.id).version,
+                buff.version.version);
+        return false;
+    }
     const float TICK_INTERVAL = 0.5f;
     auto value = std::fmod(buff.elapsed_time, TICK_INTERVAL);
     switch(buff.type){
@@ -72,6 +82,7 @@ void apply_buff(const BuffComponent& buff, Entities& objects, float deltatime){
             }
         break;
     }
+    return true;
 }
 
 void remove_buff(const BuffComponent& buff, Entities& objects){
@@ -84,6 +95,11 @@ void remove_buff(const BuffComponent& buff, Entities& objects){
             }
         break;
     }
+}
+
+void erase_buff(BuffComponent& buff){
+    std::swap(buff, m_buffs.back());
+    m_buffs.pop_back();
 }
 
 std::vector<BuffComponent> m_buffs;
