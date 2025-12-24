@@ -1,0 +1,91 @@
+#pragma once
+#include "components.h"
+
+struct BuffSystem{
+
+void add_buff(EntityID id, BuffType type, float magnitude,float duration = -1.f){
+    if(duration == -1.f){
+        duration = s_buff_info[static_cast<int>(type)].duration;
+    }
+
+    BuffComponent buff = {
+        .id = id,
+        .type = type,
+        .duration = duration,
+        .elapsed_time = 0.f,
+        .magnitude = magnitude,
+    };
+
+    m_pending_buffs.emplace_back(std::move(buff));
+}
+
+void update(Entities& objects, float deltatime){
+
+    m_buffs.insert(m_buffs.begin(), m_pending_buffs.begin(), m_pending_buffs.end());
+    m_pending_buffs.clear();
+
+    for(size_t i = 0; i < m_buffs.size(); i++){
+        auto& buff = m_buffs[i];
+        //Update buff ticks
+        auto id = buff.id;
+        buff.duration -= deltatime;
+        buff.elapsed_time += deltatime;
+        //Apply buff to object
+        apply_buff(buff, objects, deltatime);
+        //Remove expired multiplicative buff or remove buff from not alive object 
+        if(buff.duration <= 0.f){
+
+            remove_buff(buff, objects);
+            std::swap(m_buffs[i], m_buffs.back());
+            m_buffs.pop_back();
+            i--;
+        }
+
+    }
+}
+
+void add_pending_buff(const BuffComponent&& buff){
+    m_pending_buffs.emplace_back(buff);
+}
+
+void apply_buff(const BuffComponent& buff, Entities& objects, float deltatime){
+    const float TICK_INTERVAL = 0.5f;
+    auto value = std::fmod(buff.elapsed_time, TICK_INTERVAL);
+    switch(buff.type){
+        case BuffType::IGNITE:
+            // SDL_Log("fmod :%.3f; deltatime :%.3f", value, deltatime);
+
+            if(objects.is_alive(buff.id) && value < deltatime){
+                SDL_Log("Ignite tick ID[%ld]", buff.id);
+                objects.damage_entity(buff.id, buff.magnitude * TICK_INTERVAL);
+                if(objects.get_current_health(buff.id) < 0.f){
+                    objects.reset_object(buff.id);
+                }
+                
+            }
+        break;
+        case BuffType::SLOW:
+            if(objects.is_alive(buff.id)){
+                //TODO: recalculate multiplier
+                objects.m_moves[buff.id].speed_magnitude = 1.f - buff.magnitude;
+
+            }
+        break;
+    }
+}
+
+void remove_buff(const BuffComponent& buff, Entities& objects){
+    switch(buff.type){
+        case BuffType::SLOW:
+            if(objects.is_alive(buff.id)){
+                //TODO: recalculate multiplier
+                objects.m_moves[buff.id].speed_magnitude = 1.f;
+
+            }
+        break;
+    }
+}
+
+std::vector<BuffComponent> m_buffs;
+std::vector<BuffComponent> m_pending_buffs;
+};

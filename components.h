@@ -49,6 +49,17 @@ struct VersionComponent{
 };
 
 struct MoveComponent{
+    MoveComponent()
+    :speed_magnitude(1.f)
+    ,speed(0.f)
+    ,rotation_angle(0.f)
+    ,targeted(0)
+    ,target()
+    ,target_id(0)
+    ,target_version()
+    {}
+
+    float speed_magnitude;
     float speed;
     float rotation_angle;
     int targeted;
@@ -227,7 +238,7 @@ struct TowerDescription{
     float firing_interval;
     TowerType type;
     int level;
-    float slowing_percentage;
+    float slowing_magnitude;
     float slowing_time;
     float periodic_damage;
     float periodic_time;
@@ -285,6 +296,37 @@ struct FiringComponent{
     float cooldown;
     float radius;
     TowerDescription* descr;
+};
+
+enum BuffType{
+    IGNITE,
+    SLOW,
+
+    DAMAGE_BOOST,
+    REGENERATION,
+
+    COUNT,
+};
+
+struct BuffComponent{
+    EntityID id;
+    BuffType type;
+    float duration;
+    float elapsed_time;
+    float magnitude;
+
+};
+
+struct BuffTypeInfo{
+    const char* name;
+    float duration;
+};
+
+static constexpr BuffTypeInfo s_buff_info[static_cast<int>(BuffType::COUNT)] = {
+    {"Ignite", 5.f},
+    {"Slow", 2.f},
+    {"Damage Boost", 5.f},
+    {"Regeneration", 5.f},
 };
 
 struct Entities{
@@ -559,8 +601,9 @@ Entities() {
 
                     m_firings[id].interval = tower_descr->firing_interval;
                     m_firings[id].cooldown = m_firings[id].interval;
-                    m_firings[id].descr = tower_descr;
                     m_firings[id].radius = tower_descr->radius;
+                    m_firings[id].descr = tower_descr;
+
                     m_systems[id] |= eSpriteAnimationSystem | eFiringSystem;
 
                 break;
@@ -569,8 +612,8 @@ Entities() {
                     m_sprites[id].type = SpriteType::ICE_TOWER;
                     m_firings[id].interval = tower_descr->firing_interval;
                     m_firings[id].cooldown = m_firings[id].interval;
-                    m_firings[id].descr = tower_descr;
                     m_firings[id].radius = tower_descr->radius;
+                    m_firings[id].descr = tower_descr;
 
                     m_systems[id] |= eFiringSystem;
                 break;
@@ -579,8 +622,8 @@ Entities() {
                     m_sprites[id].type = SpriteType::POISON_TOWER;
                     m_firings[id].interval = tower_descr->firing_interval;
                     m_firings[id].cooldown = m_firings[id].interval;
-                    m_firings[id].descr = tower_descr;
                     m_firings[id].radius = tower_descr->radius;
+                    m_firings[id].descr = tower_descr;
 
                     m_systems[id] |= eFiringSystem;
                 break;
@@ -589,8 +632,8 @@ Entities() {
                     m_sprites[id].type = SpriteType::CLOUD_TOWER;
                     m_firings[id].interval = tower_descr->firing_interval;
                     m_firings[id].cooldown = m_firings[id].interval;
-                    m_firings[id].descr = tower_descr;
                     m_firings[id].radius = tower_descr->radius;
+                    m_firings[id].descr = tower_descr;
 
                     m_systems[id] |= eFiringSystem;
                 break;
@@ -765,9 +808,9 @@ Entities() {
                 tower.radius = 150.f;
                 tower.remove_cost = tower.cost * 0.5f;
                 tower.type = type;
-                tower.slowing_percentage = 0;
+                tower.slowing_magnitude = 0.f;
                 tower.slowing_time = 0;
-                tower.periodic_damage = 1.f;
+                tower.periodic_damage = 5.f;
                 tower.periodic_time = 3.f;
                 tower.burst_damage = 5.f;
                 tower.projectile_speed = 200.f;
@@ -784,8 +827,8 @@ Entities() {
                 tower.radius = 250.f;
                 tower.remove_cost = tower.cost * 0.5f;
                 tower.type = type;
-                tower.slowing_percentage = 20;
-                tower.slowing_time = 3.f;
+                tower.slowing_magnitude = 0.90f;
+                tower.slowing_time = 1.f;
                 tower.periodic_damage = 0;
                 tower.periodic_time = 0;
                 tower.burst_damage = 2.f;
@@ -803,7 +846,7 @@ Entities() {
                 tower.radius = 250.f;
                 tower.remove_cost = tower.cost * 0.5f;
                 tower.type = type;
-                tower.slowing_percentage = 10;
+                tower.slowing_magnitude = 0.10f;
                 tower.slowing_time = 1.5f;
                 tower.periodic_damage = 0.5f;
                 tower.periodic_time = 3.f;
@@ -822,7 +865,7 @@ Entities() {
                 tower.radius = 100.f;
                 tower.remove_cost = tower.cost * 0.5f;
                 tower.type = type;
-                tower.slowing_percentage = 25;
+                tower.slowing_magnitude = 0.25f;
                 tower.slowing_time = 1.5f;
                 tower.periodic_damage = 0.5f;
                 tower.periodic_time = 3.f;
@@ -927,5 +970,28 @@ Entities() {
         return get_empty_id();
     }
 
+    void damage_entity(EntityID id, float damage){
+        m_health[id].cur_health -= damage;
+        if(auto enemy_descr = std::get_if<EnemyDescription>(&m_descriptions[id])){
+            enemy_descr->cur_health = m_health[id].cur_health;
+        }
+        
+    }
+
+    float get_current_health(EntityID id){
+        if(id > size()){
+            SDL_Log("WARNING: obj with [%ld] out of range. Returned health=0.f", id);
+            return 0.f;
+        } 
+        return m_health[id].cur_health;
+    }
+
+    float get_effective_speed(EntityID id){
+        if(id > size()){
+            SDL_Log("WARNING: obj with [%ld] out of range. Returned speed=0.f", id);
+            return 0.f;
+        } 
+        return m_moves[id].speed * m_moves[id].speed_magnitude;
+    }
 };
 

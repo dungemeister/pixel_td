@@ -14,6 +14,7 @@
 #include "firing_system.h"
 #include "hud_system.h"
 #include "hud_render_system.h"
+#include "buff_system.h"
 
 #include "ui_layout.h"
 #include "ui_label.h"
@@ -58,6 +59,7 @@ private:
     EnemyCollistionSystem                 m_enemy_collision_system;
     SpawnSystem                           m_spawn_system;
     FiringSystem                          m_firing_system;
+    BuffSystem                            m_buff_system;
     Entities                              m_objects;
 
     std::vector<Level> m_levels;

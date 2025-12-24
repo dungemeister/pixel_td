@@ -323,7 +323,8 @@ void Game::update_game(){
     m_firing_system.update(m_objects, m_cur_level, deltatime);
     m_move_system.update(m_objects, m_cur_level, deltatime);
     m_enemy_collision_system.update(m_objects, m_cur_level, deltatime);
-    m_castle_damage_system.update(m_objects, m_cur_level, deltatime, m_components_callbacks);
+    m_castle_damage_system.update(m_objects, m_cur_level, m_buff_system, deltatime, m_components_callbacks);
+    m_buff_system.update(m_objects, deltatime);
     m_animation_system.update(m_objects, deltatime);
     
 }
@@ -579,9 +580,9 @@ void Game::load_decor_random_sprites(SpriteType type, size_t size, float scale=1
 void Game::load_towers(){
     auto id = m_objects.add_tower(m_cur_level, TowerType::FIRE_TOWER_DATA, {761.657, 382.826});
     id = m_objects.add_tower(m_cur_level, TowerType::ICE_TOWER_DATA, {942.076, 378.737});
-    id = m_objects.add_tower(m_cur_level, TowerType::FIRE_TOWER_DATA, {615.781, 267.516});
-    id = m_objects.add_tower(m_cur_level, TowerType::POISON_TOWER_DATA, {791.7, 254.0});
-    id = m_objects.add_tower(m_cur_level, TowerType::CLOUD_TOWER_DATA, {1056.9, 494.2});
+    // id = m_objects.add_tower(m_cur_level, TowerType::FIRE_TOWER_DATA, {615.781, 267.516});
+    // id = m_objects.add_tower(m_cur_level, TowerType::POISON_TOWER_DATA, {791.7, 254.0});
+    // id = m_objects.add_tower(m_cur_level, TowerType::CLOUD_TOWER_DATA, {1056.9, 494.2});
 }
 
 void Game::register_type(SpriteType type, const std::vector<std::string>& sprites){

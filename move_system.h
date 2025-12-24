@@ -9,8 +9,11 @@ public:
         for(int id = 0, n = objects.size(); id < n; id++){
             if((objects.m_systems[id] & eMoveSystem) == 0) continue;
             
+            //Get effective speed for object
+            auto speed = objects.get_effective_speed(id);
             if(objects.m_moves[id].targeted && (objects.m_types[id] == EntityGlobalType::ENEMY_ENTITY)){
-                // Vector2D pos = {objects.m_positions[id].x, objects.m_positions[id].y};
+                
+
                 Vector2D pos = {objects.m_sprites[id].center.x, objects.m_sprites[id].center.y};
                 Vector2D diff = objects.m_moves[id].target - pos;
                 Vector2D force = CalculateLaneConstraintForce(level, pos);
@@ -18,7 +21,7 @@ public:
                 float distanceToTarget = diff.magnitude();
 
                 //Determine the distance to move this frame.
-                float distanceMove = objects.m_moves[id].speed * deltatime;
+                float distanceMove = speed * deltatime;
                 if (distanceMove > distanceToTarget)
                     distanceMove = distanceToTarget;
 
@@ -45,6 +48,10 @@ public:
 
                 objects.m_positions[id].x = objects.m_sprites[id].posX;
                 objects.m_positions[id].y = objects.m_sprites[id].posY;
+
+                if(auto enemy_descr = std::get_if<EnemyDescription>(&objects.m_descriptions[id])){
+                    enemy_descr->speed = objects.get_effective_speed(id);
+                }
             }
             else if(objects.m_moves[id].targeted &&
                    (objects.m_types[id] == EntityGlobalType::PROJECTILE_ENTITY)){
@@ -66,7 +73,7 @@ public:
                 float distanceToTarget = diff.magnitude();
 
                 //Determine the distance to move this frame.
-                float distanceMove = objects.m_moves[id].speed * deltatime;
+                float distanceMove = speed * deltatime;
                 if (distanceMove > distanceToTarget)
                     distanceMove = distanceToTarget;
 
