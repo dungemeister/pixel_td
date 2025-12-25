@@ -91,6 +91,7 @@ SDL_Texture* RenderSystem::load_texture(std::string filepath){
             SDL_Log("SDL_CreateTextureFromSurface: %s", SDL_GetError());
             return nullptr;
         }
+        SDL_SetTextureScaleMode(texture, SDL_SCALEMODE_NEAREST);
         m_textures.insert(std::pair{filepath, texture});
     }
     else{
