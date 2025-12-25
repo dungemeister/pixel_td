@@ -104,22 +104,16 @@ void Game::init_render_system(){
 void Game::init_game(){
     SDL_FPoint level_size = {1024, 1024};
     SDL_FPoint level_pos = {(m_width - level_size.x) / 2, (m_height - level_size.y) / 2};
+    m_levels.reserve(32);
+    //Load levels in backward order to pop back current actual level from vector
     m_levels.emplace_back("assets/map/level2.map", level_pos, level_size);
     m_levels.emplace_back("assets/map/level1.map", level_pos, level_size);
     m_cur_level = m_levels.back();
     m_levels.pop_back();
-    m_objects.reserve(256);
+    auto [rows, columns] = m_cur_level.get_resolution();
+    m_objects.reserve(rows * columns);
 
-    // SDL_FRect map_rect = {level_pos.x - 3 * level_size.x / 64,
-    //                       level_pos.y - 3 * level_size.y / 64,
-    //                       level_size.x + 3 * level_size.x / 64 * 2,
-    //                       level_size.y  + 3 * level_size.y / 64 * 2};
-    // m_map_layout = new UILayout(this, SDL_GetRenderer(m_window), map_rect);
-    // UIImage* map_frame_img = new UIImage("assets/map_frame.png", m_map_layout);
-    // map_frame_img->SetDestSize({map_rect.w, map_rect.h});
-    // m_map_layout->PushBackWidgetHorizontal(map_frame_img);
-
-    //Register entities types
+    //Register entities sprites
     register_type(SpriteType::UNDEFINED,             {"assets/quot_stickers.png"});
     register_type(SpriteType::TILE,                  {"assets/grass.png"});
     register_type(SpriteType::ROAD,                  {"assets/dirt_road.png"});
@@ -213,10 +207,11 @@ void Game::loop(){
 }
 
 void Game::handle_mouse_event(Entities& objects, const SDL_MouseButtonEvent& mouse_event){
-    SDL_FPoint mouse_pos = {mouse_event.x, mouse_event.y};
     Vector2D   mouse_vec = {mouse_event.x, mouse_event.y};
     if(mouse_event.button == SDL_BUTTON_LEFT){
+        //Left button mouse click drops selected entity information from description layout
         remove_descriptor_widgets();
+        
         if(m_selected_tower == nullptr &&
            m_cur_level.is_occupied(mouse_vec)){
 
@@ -230,15 +225,17 @@ void Game::handle_mouse_event(Entities& objects, const SDL_MouseButtonEvent& mou
                 SDL_Log("WARNING: Fail to get tower description for object ID %ld", id);
                 return;
             }
-            update_description_layout(objects.m_sprites[id], objects.m_descriptions[id]);
             if (auto tower = std::get_if<TowerDescription>(&objects.m_descriptions[id])){
                 SDL_Log("Selected tower %ld, type %d", id, tower->type);
             }
             if (auto enemy = std::get_if<EnemyDescription>(&objects.m_descriptions[id])){
                 SDL_Log("Selected enemy %ld, type %d", id, enemy->type);
             }
+            
+            update_description_layout(objects.m_sprites[id], objects.m_descriptions[id]);
         }
-        else if(m_components_data[ComponentType::PLAYER_GOLD] > 0 &&
+        else if(auto gold = m_components_data[ComponentType::PLAYER_GOLD];
+                gold > 0 &&
                 m_selected_tower != nullptr &&
                 !m_cur_level.is_occupied(mouse_vec)){
             
@@ -247,7 +244,7 @@ void Game::handle_mouse_event(Entities& objects, const SDL_MouseButtonEvent& mou
                     auto res = callback->second(-m_selected_tower->cost);
                     if(res){
                         objects.add_tower(m_cur_level, m_selected_tower->type, mouse_vec);
-                        SDL_Log("Added tower to tile (%.1f, %.1f)", mouse_pos.x, mouse_pos.y);
+                        SDL_Log("Added tower to tile (%.1f, %.1f)", mouse_vec.x, mouse_vec.y);
                     }
                     else{
                         SDL_Log("Not enough gold. Current gold %.1f", m_components_data[ComponentType::PLAYER_GOLD]);
@@ -268,10 +265,10 @@ void Game::handle_mouse_event(Entities& objects, const SDL_MouseButtonEvent& mou
             SDL_Log("WARNING: Enemy aint selected");
             return;
         }
-        if(m_cur_level.is_road_tile(mouse_pos)){
+        if(m_cur_level.is_road_tile(mouse_vec.get_sdl_point())){
             auto id = objects.spawn_enemies_targeted(m_cur_level,
                                                      m_cur_level.get_castle_pos(),
-                                                     mouse_pos,
+                                                     mouse_vec.get_sdl_point(),
                                                      m_selected_enemy->type);
 
         }
