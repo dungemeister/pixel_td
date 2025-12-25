@@ -25,6 +25,7 @@ Game::Game()
     ,m_spawn_system()
     ,m_current_ticks(0)
     ,m_selected_tower(nullptr)
+    ,m_selected_enemy(nullptr)
     ,m_state(GameState::Gameplay)
     ,m_pause_menu()
     ,m_running(1)
@@ -214,9 +215,8 @@ void Game::loop(){
 void Game::handle_mouse_event(Entities& objects, const SDL_MouseButtonEvent& mouse_event){
     SDL_FPoint mouse_pos = {mouse_event.x, mouse_event.y};
     Vector2D   mouse_vec = {mouse_event.x, mouse_event.y};
-    remove_descriptor_widgets();
     if(mouse_event.button == SDL_BUTTON_LEFT){
-        
+        remove_descriptor_widgets();
         if(m_selected_tower == nullptr &&
            m_cur_level.is_occupied(mouse_vec)){
 
@@ -260,14 +260,19 @@ void Game::handle_mouse_event(Entities& objects, const SDL_MouseButtonEvent& mou
             }
         else{
             SDL_Log("WARNING: player's gold %.1f", m_components_data[ComponentType::PLAYER_GOLD]);
+            m_selected_tower = nullptr;
         }
     }
     else if(mouse_event.button == SDL_BUTTON_RIGHT){
+        if(!m_selected_enemy) {
+            SDL_Log("WARNING: Enemy aint selected");
+            return;
+        }
         if(m_cur_level.is_road_tile(mouse_pos)){
             auto id = objects.spawn_enemies_targeted(m_cur_level,
                                                      m_cur_level.get_castle_pos(),
                                                      mouse_pos,
-                                                     static_cast<EnemyType>(static_cast<int>(EnemyType::VIKING) + rand()%static_cast<int>(EnemyType::ENEMY_TYPES_SIZE)));
+                                                     m_selected_enemy->type);
 
         }
     }
@@ -302,6 +307,10 @@ void Game::handle_input(){
                     m_selected_tower = &m_towers_scancode[scancode];
                     SDL_Log("Selected Tower %d", m_selected_tower->type);
                 }
+                if(m_enemies_scancode.count(scancode) > 0){
+                    m_selected_enemy = &m_enemies_scancode[scancode];
+                    SDL_Log("Selected Enemy %d", m_selected_enemy->type);
+                }
                 if(scancode == SDL_SCANCODE_SPACE){
                     if(m_state == GameState::PauseMenu){
                         m_state = GameState::Gameplay;
@@ -310,6 +319,7 @@ void Game::handle_input(){
                         m_state = GameState::PauseMenu;
                     }
                 }
+                
             break;
         }
     }
@@ -609,17 +619,17 @@ void Game::load_hearth_callback(){
             it->second -= value;
             SDL_Log("Health %.1f", it->second);
             
+            if(it->second <= 0.f){
+                // m_running = false;
+                SDL_Log("GAME OVER");
+                it->second = 100.f;
+            }
             if(auto widget = m_player_stats_layout->GetWidget("L_heart"); widget){
                 if(auto health_label = dynamic_cast<UILabel*>(widget)){
                     std::stringstream health;
                     health << std::fixed << std::setprecision(0) << it->second;
                     health_label->SetText(health.str());
                 }
-            }
-            if(it->second <= 0.f){
-                m_running = false;
-                
-                SDL_Log("GAME OVER");
             }
             return true;
         }
@@ -669,10 +679,19 @@ void Game::register_towers(){
 
 void Game::register_enemies(){
     auto enemy = m_objects.create_enemy_descr(EnemyType::VIKING);
+    m_enemies_scancode.emplace(SDL_SCANCODE_Q, std::move(enemy));
+
     enemy      = m_objects.create_enemy_descr(EnemyType::BEE);
+    m_enemies_scancode.emplace(SDL_SCANCODE_W, std::move(enemy));
+
     enemy      = m_objects.create_enemy_descr(EnemyType::DRAGONIT);
+    m_enemies_scancode.emplace(SDL_SCANCODE_E, std::move(enemy));
+
     enemy      = m_objects.create_enemy_descr(EnemyType::SERJANT);
+    m_enemies_scancode.emplace(SDL_SCANCODE_R, std::move(enemy));
+    
     enemy      = m_objects.create_enemy_descr(EnemyType::TANK);
+    m_enemies_scancode.emplace(SDL_SCANCODE_T, std::move(enemy));
 }
 
 void Game::handle_update(){
@@ -782,6 +801,11 @@ void Game::update_description_layout(const SpriteComponent& sprite, const Entiti
         proj_speed_ss << std::fixed << std::setprecision(1) << "Proj speed: " << tower->projectile_speed;
         auto proj_speed_lbl   = std::make_unique<UILabel>(proj_speed_ss.str(), "T_remove_cost");
         lower_desc->PushBackWidgetVertical(std::move(proj_speed_lbl));
+        //Add dps param
+        std::stringstream dps_ss;
+        dps_ss << std::fixed << std::setprecision(1) << "DPS: " << (tower->burst_damage / tower->firing_interval) + (tower->periodic_damage);
+        auto dps_lbl   = std::make_unique<UILabel>(dps_ss.str(), "T_remove_cost");
+        lower_desc->PushBackWidgetVertical(std::move(dps_lbl));
 
         m_descriptions_layout->AddLayoutVertical(std::move(lower_desc));
         

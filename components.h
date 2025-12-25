@@ -562,8 +562,8 @@ Entities() {
         m_positions[id].angle = 0;
         m_positions[id].x = spawn_pos.x;
         m_positions[id].y = spawn_pos.y;
-        m_positions[id].collision_radius = m_sprites[id].radius / 2;
-        m_systems[id] |= ePositionSystem;
+        // m_positions[id].collision_radius = m_sprites[id].radius / 2;
+        m_systems[id] |= ePositionSystem | eCollisionSystem;
 
         m_borders[id].x_min = 0;
         m_borders[id].x_max = 0;
@@ -576,7 +576,7 @@ Entities() {
         m_moves[id].target = target;
         
         // objects.m_moves[id].rotation_angle = RandomFloat(-1.f, 1.f);
-        m_systems[id] |= eMoveSystem | eCollisionSystem;
+        m_systems[id] |= eMoveSystem;
 
         m_types[id] = EntityGlobalType::ENEMY_ENTITY;
 
@@ -742,9 +742,9 @@ Entities() {
         for(int id = 1, n = Entities::size(); id < n; id++){
             
             if(m_types[id] == EntityGlobalType::ENEMY_ENTITY){
-                auto diff_radius = (m_positions[id].get_vector2d() - pos).magnitude();
+                auto diff_radius = (get_object_center_pos(id) - pos).magnitude();
                 if(diff_radius <= radius){
-                    diff_to_target = (m_positions[id].get_vector2d() - target).magnitude();
+                    diff_to_target = (get_object_center_pos(id) - target).magnitude();
                     targets_in_radius.emplace(id, diff_to_target);
                     if(diff_to_target < length){
                         length = diff_to_target;
@@ -934,7 +934,7 @@ Entities() {
             case EnemyType::VIKING:
                 enemy.armor  = 5.f;
                 enemy.bounty = 2.f;
-                enemy.damage = 2.f;
+                enemy.damage = 10.f;
                 enemy.max_health = 3.f;
                 enemy.cur_health = 3.f;
                 enemy.speed  = 125.f;
@@ -942,7 +942,7 @@ Entities() {
             case EnemyType::BEE:
                 enemy.armor  = 2.f;
                 enemy.bounty = 1.f;
-                enemy.damage = 1.f;
+                enemy.damage = 5.f;
                 enemy.max_health = 1.f;
                 enemy.cur_health = 1.f;
                 enemy.speed  = 150.f;
@@ -950,7 +950,7 @@ Entities() {
             case EnemyType::DRAGONIT:
                 enemy.armor  = 8.f;
                 enemy.bounty = 3.f;
-                enemy.damage = 2.f;
+                enemy.damage = 15.f;
                 enemy.max_health = 5.f;
                 enemy.cur_health = 5.f;
                 enemy.speed  = 100.f;
@@ -958,7 +958,7 @@ Entities() {
             case EnemyType::SERJANT:
                 enemy.armor  = 10.f;
                 enemy.bounty = 8.f;
-                enemy.damage = 5.f;
+                enemy.damage = 20.f;
                 enemy.max_health = 15.f;
                 enemy.cur_health = 15.f;
                 enemy.speed  = 75.f;
@@ -966,7 +966,7 @@ Entities() {
             case EnemyType::TANK:
                 enemy.armor  = 15.f;
                 enemy.bounty = 15.f;
-                enemy.damage = 10.f;
+                enemy.damage = 25.f;
                 enemy.max_health = 25.f;
                 enemy.cur_health = 25.f;
                 enemy.speed  = 50.f;
@@ -1029,6 +1029,13 @@ Entities() {
     }
 
     bool is_object_dead_pending(EntityID id) const { return m_health[id].dead_pending != 0; }
-    
+
+    Vector2D get_object_center_pos(EntityID id) const {
+        if(id > size()){
+            SDL_Log("WARNING: obj with [%ld] out of range. Returned pos={0.f, 0.f}", id);
+            return {};
+        }
+        return m_sprites[id].center;
+    }
 };
 

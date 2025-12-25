@@ -21,7 +21,7 @@ struct FiringSystem{
 
                         auto tile = tile_opt.value();
                         auto castle_tile = level.get_castle_tile();
-                        auto enemy_id = objects.get_nearest_enemy_to_point_in_radius(tile.center_pos,
+                        auto enemy_id = objects.get_nearest_enemy_to_point_in_radius(objects.m_sprites[id].center,
                                                                                      castle_tile.center_pos,
                                                                                      objects.m_firings[id].radius);
 

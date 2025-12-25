@@ -11,7 +11,8 @@ struct AnimationSystem{
 
                 SpriteComponent& sprite = objects.m_sprites[id];
                 AnimationComponent& anim = objects.m_animations[id];
-                anim.cur_frame += deltatime * anim.fps;
+                MoveComponent& move = objects.m_moves[id];
+                anim.cur_frame += deltatime * anim.fps * move.speed_magnitude;
                 while(anim.cur_frame >= anim.frames_size){
                     anim.cur_frame -= anim.frames_size;
                 }

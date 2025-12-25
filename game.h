@@ -79,7 +79,9 @@ private:
     std::unique_ptr<UILayout>   m_map_layout;
 
     TowerDescription* m_selected_tower;
+    EnemyDescription* m_selected_enemy;
     std::unordered_map<SDL_Scancode, TowerDescription> m_towers_scancode;
+    std::unordered_map<SDL_Scancode, EnemyDescription> m_enemies_scancode;
 
     std::unordered_map<ComponentType, float> m_components_data;
     std::unordered_map<ComponentType, std::function<bool(float)>> m_components_callbacks;
