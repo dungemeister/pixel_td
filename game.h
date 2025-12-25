@@ -16,6 +16,7 @@
 #include "hud_render_system.h"
 #include "buff_system.h"
 #include "deathrattle_system.h"
+#include "camera2D.h"
 
 #include "ui_layout.h"
 #include "ui_label.h"
@@ -76,6 +77,7 @@ private:
     std::unordered_map<ComponentType, float> m_components_data;
     std::unordered_map<ComponentType, std::function<bool(float)>> m_components_callbacks;
 
+    Camera2D camera;
     
     GameState m_state;
     int m_running;

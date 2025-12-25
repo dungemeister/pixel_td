@@ -95,8 +95,9 @@ void Game::init_render_system(){
         assert(m_info_font != nullptr);
     }
 
-    m_window = SDL_CreateWindow("Anime TD", m_width, m_height, SDL_WINDOW_OPENGL | SDL_WINDOW_RESIZABLE);
+    m_window = SDL_CreateWindow("Anime TD", m_width, m_height, SDL_WINDOW_RESIZABLE);
     m_render_system = std::make_unique<RenderSystem>(m_window);
+    SDL_SetRenderLogicalPresentation(SDL_GetRenderer(m_window), m_width, m_height, SDL_LOGICAL_PRESENTATION_STRETCH);
 
     load_cursor("assets/cursor.png");
     
@@ -291,6 +292,11 @@ void Game::handle_mouse_event(Entities& objects, const SDL_MouseButtonEvent& mou
 
         }
     }
+    else if(mouse_event.button == SDL_BUTTON_MIDDLE){
+        m_selected_tower = nullptr;
+        m_selected_enemy = nullptr;
+        load_cursor("assets/cursor.png");
+    }
 }
 
 void Game::handle_input(){
@@ -301,13 +307,7 @@ void Game::handle_input(){
                 m_running = 0;
             break;
             case SDL_EVENT_WINDOW_RESIZED:
-                int w,h;
-                if(SDL_GetWindowSize(m_window, &w, &h)){
-                    m_width = w;
-                    m_height = h;
-                    std::cout << "Window resized " << w << " " << h << std::endl;
-                    resize_callback();
-                }
+                resize_callback();
             break;
             case SDL_EVENT_MOUSE_MOTION:
                 m_cursor_pos.x = event.motion.x;
@@ -397,6 +397,8 @@ void Game::handle_draw(){
 void Game::resize_callback(){
     if(!&m_cur_level) return;
 
+    auto new_size = SDL_GetWindowSize(m_window, &m_width, &m_height);
+    SDL_Log("New size: %dx%d", m_width, m_height);
     auto res    = m_cur_level.get_resolution();
     auto tokens = m_cur_level.get_tokens();
     auto rows = res.first;
