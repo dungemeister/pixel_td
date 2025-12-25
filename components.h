@@ -38,9 +38,15 @@ enum SpriteLayer{
 };
 
 struct PositionComponent{
+    PositionComponent()
+    :x(0.f)
+    ,y(0.f)
+    ,angle(0.f)
+    ,collision_radius(0.f) {}
+
     float x,y;
     float angle;
-
+    float collision_radius;
     Vector2D get_vector2d() { return {x, y}; }
     SDL_FPoint get_sdl_fpoint() { return {x, y}; }
 };
@@ -158,6 +164,7 @@ enum EntitySystems{
     eFiringSystem            = 1 << 7,
     eDamageSystem            = 1 << 8,
     eHealthSystem            = 1 << 9,
+    eCollisionSystem         = 1 << 10,
 };
 
 struct SpriteComponent
@@ -178,7 +185,8 @@ struct SpriteComponent
     float radius;
 
     void calc_radius(){
-        radius = std::sqrt((width + height) * scale / 2);
+        // radius = std::sqrt(scale / 2 * (width * width + height * height)) / 2;
+        radius = width * scale / 2;
     }
     void calc_center(){
         center = {posX + width * scale / 2, posY + height * scale / 2};
@@ -492,11 +500,6 @@ Entities() {
         auto tile_size = level.get_tile_size();
         auto path      = level.get_road_tiles();
 
-        m_positions[id].angle = 0;
-        m_positions[id].x = spawn_pos.x;
-        m_positions[id].y = spawn_pos.y;
-        m_systems[id] |= ePositionSystem;
-
         m_sprites[id].posX = spawn_pos.x;
         m_sprites[id].posY = spawn_pos.y;
         m_sprites[id].width = tile_size.x;
@@ -505,7 +508,7 @@ Entities() {
         m_sprites[id].colG = 0.6;
         m_sprites[id].colB = 0.6;
         m_sprites[id].angle = 0;
-        m_sprites[id].flag = fUpperLeftSprite | fSpriteTone;
+        m_sprites[id].flag = fCenterSprite | fSpriteTone | fSpriteBorder;
         m_sprites[id].layer = SpriteLayer::ENTITY;
         m_sprites[id].anim_index = -1;
         m_systems[id] |= eSpriteSystem;
@@ -556,6 +559,12 @@ Entities() {
         m_sprites[id].calc_center();
         m_sprites[id].calc_radius();
 
+        m_positions[id].angle = 0;
+        m_positions[id].x = spawn_pos.x;
+        m_positions[id].y = spawn_pos.y;
+        m_positions[id].collision_radius = m_sprites[id].radius / 2;
+        m_systems[id] |= ePositionSystem;
+
         m_borders[id].x_min = 0;
         m_borders[id].x_max = 0;
         // objects.m_borders[id].y_min = (tile.pos.y - tile_size.y) / 2;
@@ -567,7 +576,7 @@ Entities() {
         m_moves[id].target = target;
         
         // objects.m_moves[id].rotation_angle = RandomFloat(-1.f, 1.f);
-        m_systems[id] |= eMoveSystem;
+        m_systems[id] |= eMoveSystem | eCollisionSystem;
 
         m_types[id] = EntityGlobalType::ENEMY_ENTITY;
 
@@ -606,7 +615,7 @@ Entities() {
             m_sprites[id].colG = 0.6;
             m_sprites[id].colB = 0.6;
             m_sprites[id].angle = 0;
-            m_sprites[id].flag = fUpperLeftSprite | fSpriteCooldownBar;
+            m_sprites[id].flag = fUpperLeftSprite | fSpriteCooldownBar | fSpriteBorder;
             m_sprites[id].layer = SpriteLayer::ENTITY;
             m_sprites[id].anim_index = -1;
             m_systems[id] |= eSpriteSystem;
@@ -768,7 +777,7 @@ Entities() {
         m_sprites[id].colG = 0.6;
         m_sprites[id].colB = 0.6;
         m_sprites[id].angle = 0;
-        m_sprites[id].flag = fCenterSprite;
+        m_sprites[id].flag = fCenterSprite | fSpriteBorder;
         m_sprites[id].layer = SpriteLayer::PROJECTILES;
         m_sprites[id].anim_index = -1;
         m_systems[id] |= eSpriteSystem;

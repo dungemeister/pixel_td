@@ -341,6 +341,7 @@ void Game::handle_draw(){
             m_render_system->render(m_objects);
         break;
         case Game::PauseMenu:
+            m_render_system->render(m_objects);
             m_render_system->render(m_pause_menu_objects);
         break;
     }

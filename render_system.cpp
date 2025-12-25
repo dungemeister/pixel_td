@@ -184,6 +184,12 @@ bool RenderSystem::render_sprite(const SpriteComponent& sprite){
                         false,
                         {0xFF, 0x00, 0xFF, 0xFF});
     }
+
+    if(sprite.radius > 0.f){
+        auto col = Colors::OceanSunset::midnight_green;
+        col.a = 0x80;
+        res = Circle::render_circle_filled(m_renderer, sprite.center.x, sprite.center.y, sprite.radius, col);
+    }
     return res;
 }
 
@@ -335,8 +341,8 @@ bool RenderSystem::render_sprite_texture(const SpriteComponent& sprite, SDL_Text
     if(sprite.flag == fCenterSprite){
 
         //Shift sprite to the center of position
-        dest_rect.x -= dest_rect.w / 2;
-        dest_rect.y -= dest_rect.h / 2;
+        dest_rect.x  = sprite.center.x;
+        dest_rect.y  = sprite.center.y;
     }
     SDL_FPoint center = {dest_rect.w / 2, dest_rect.h / 2};
     float angle = sprite.angle;
@@ -345,7 +351,6 @@ bool RenderSystem::render_sprite_texture(const SpriteComponent& sprite, SDL_Text
         SDL_SetTextureBlendMode(text, SDL_BLENDMODE_BLEND);
         SDL_SetTextureColorMod(text, sprite.colR * 255, sprite.colG * 255, sprite.colB * 255);
     }
-    
 
     res = SDL_RenderTextureRotated(m_renderer, text, nullptr, &dest_rect, angle, &center, mode);
     

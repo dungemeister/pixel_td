@@ -9,16 +9,27 @@ public:
         collisions.reserve(objects.size() * 2);
 
         for(int id1 = 0, n = objects.size(); id1 < n; id1++){
-            if(objects.m_types[id1] != EntityGlobalType::ENEMY_ENTITY) continue;
+            if(objects.m_types[id1] != EntityGlobalType::ENEMY_ENTITY && 
+              (objects.m_systems[id1] & eCollisionSystem) == 0) continue;
 
             for(int id2 = id1 + 1; id2 < n; id2++){
-                if(objects.m_types[id2] != EntityGlobalType::ENEMY_ENTITY) continue;
-
-                if (circles_overlap(
-                    objects.m_sprites[id1].center, objects.m_sprites[id1].radius,
-                    objects.m_sprites[id2].center, objects.m_sprites[id2].radius)) {
-                    
-                    collisions.emplace_back(id1, id2);
+                if(objects.m_types[id2] != EntityGlobalType::ENEMY_ENTITY && 
+                  (objects.m_systems[id1] & eCollisionSystem) == 0) continue;
+                if(objects.m_sprites[id1].flag & fCenterSprite){
+                    if (circles_overlap(
+                        objects.m_sprites[id1].center, objects.m_sprites[id1].radius,
+                        objects.m_sprites[id2].center, objects.m_sprites[id2].radius)) {
+                        
+                        collisions.emplace_back(id1, id2);
+                    }
+                }
+                if(objects.m_sprites[id1].flag & fUpperLeftSprite){
+                    if (circles_overlap(
+                        objects.m_sprites[id1].posX, objects.m_sprites[id1].radius,
+                        objects.m_sprites[id2].posY, objects.m_sprites[id2].radius)) {
+                        
+                        collisions.emplace_back(id1, id2);
+                    }
                 }
             }
         }
