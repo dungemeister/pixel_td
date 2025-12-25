@@ -39,9 +39,11 @@ public:
 
     void register_type_sprite(SpriteType type, const std::vector<std::string>& texturepath);
     void unregister_type_sprite(SpriteType type);
-
+    
     std::vector<SDL_Texture*> get_registered_type_textures(SpriteType type);
     std::vector<std::string>  get_registered_type_textures_pathes(SpriteType type);
+
+public:
     SDL_Window* m_window;
     std::vector<SpriteComponent> m_background_sprites;
     std::vector<SpriteComponent> m_decoration_sprites;
@@ -59,6 +61,7 @@ public:
     std::unordered_map<SpriteType, std::vector<std::string>>  m_registered_types;
     std::unordered_map<SDL_Texture*, std::vector<SDL_Vertex>> m_vertexBatches;
     std::unordered_map<SDL_Texture*, std::vector<int>>        m_indexBatches;
+
 private:
     SDL_Texture* load_texture(std::string);
     void init_custom_shaders();
@@ -73,5 +76,6 @@ private:
     bool render_health_bar(const SpriteComponent& sprite, const HealthComponent& health);
     bool render_cooldown_bar(const SpriteComponent& sprite);
 
+private:
     std::vector<std::pair<std::string, SDL_FRect>> m_brushes_src;
 };

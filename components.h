@@ -379,6 +379,7 @@ Entities() {
 
     std::unordered_map<TowerType, TowerDescription> m_towers_descr;
     std::unordered_map<EnemyType, EnemyDescription> m_enemies_descr;
+    std::unordered_map<std::variant<std::monostate, TowerType, EnemyType>, SpriteType> m_entity_to_sprite_type;
 
     EntityID get_empty_id() const { return m_empty_id; }
 
@@ -545,10 +546,12 @@ Entities() {
                     m_animations[id].frames_size = 4;
                     m_animations[id].fps = 6;
                     m_systems[id] |= eSpriteAnimationSystem;
+
                 break;
                 case EnemyType::TANK:
                     m_sprites[id].type = SpriteType::TANK_SPRITE;
                     m_sprites[id].scale = 1.1;
+                    
                 break;
                 default:
                     SDL_Log("WARNING: Unexpected enemy type %d", type);
@@ -1036,6 +1039,19 @@ Entities() {
             return {};
         }
         return m_sprites[id].center;
+    }
+
+    SpriteType get_sprity_for_entity_type(std::variant<TowerType, EnemyType> type){
+        if(auto tower = std::get_if<TowerType>(&type)){
+            return m_entity_to_sprite_type[*tower];
+        }
+        if(auto enemy = std::get_if<EnemyType>(&type)){
+            return m_entity_to_sprite_type[*enemy];
+        }
+        return SpriteType::UNDEFINED;
+    }
+    void register_entity_sprite(std::variant<std::monostate, TowerType, EnemyType> entity_type, SpriteType sprite_type){
+        m_entity_to_sprite_type.emplace(entity_type, sprite_type);
     }
 };
 

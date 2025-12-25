@@ -39,15 +39,6 @@ enum GameState{
     void handle_update();
     void handle_draw();
 
-    // void add_ui(UILayout* ui){
-    //     m_ui_layouts.emplace_back(ui);
-    // }
-
-    // void remove_ui(UILayout* ui){
-    //     auto it = std::find(m_ui_layouts.begin(), m_ui_layouts.end(), ui);
-    //     m_ui_layouts.erase(it);
-    // }
-
 private:
     SDL_Window*                           m_window;
     SDL_Renderer*                         m_renderer;
@@ -73,7 +64,6 @@ private:
     HudSystem           m_pause_menu;
     HudSystem           m_main_menu;
 
-    // std::vector<UILayout*>      m_ui_layouts;
     std::unique_ptr<UILayout>   m_descriptions_layout;
     std::unique_ptr<UILayout>   m_player_stats_layout;
     std::unique_ptr<UILayout>   m_map_layout;
@@ -86,6 +76,7 @@ private:
     std::unordered_map<ComponentType, float> m_components_data;
     std::unordered_map<ComponentType, std::function<bool(float)>> m_components_callbacks;
 
+    
     GameState m_state;
     int m_running;
     int m_width;
@@ -98,9 +89,9 @@ private:
 
     float m_hud_font_size = 24.f;
     TTF_Font* m_info_font;
-
+private:
     void init();
-    void load_cursor();
+    void load_cursor(const std::string& sprite);
     void init_render_system();
     void init_game();
     void init_pause_menu();

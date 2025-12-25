@@ -50,8 +50,8 @@ void Game::init_pause_menu(){
 
 }
 
-void Game::load_cursor(){
-    SDL_Surface* orig_surface = IMG_Load("assets/cursor.png");
+void Game::load_cursor(const std::string& sprite){
+    SDL_Surface* orig_surface = IMG_Load(sprite.c_str());
 
     if(!orig_surface){
         SDL_Log("IMG_Load: %s", SDL_GetError());
@@ -67,13 +67,14 @@ void Game::load_cursor(){
     }
     SDL_Rect r = {0, 0, 64, 64};
     SDL_BlitSurfaceScaled(orig_surface, NULL, scaled_surface, &r, SDL_SCALEMODE_NEAREST);
-    m_cursor = SDL_CreateColorCursor(scaled_surface, 0, 0);
+    m_cursor = SDL_CreateColorCursor(scaled_surface, r.w / 2, r.h / 2);
     if(!m_cursor){
         SDL_Log("SDL_CreateColorCursor: %s", SDL_GetError());
         SDL_DestroySurface(orig_surface);
         SDL_DestroySurface(scaled_surface);
         return;
     }
+    
     SDL_DestroySurface(orig_surface);
     SDL_DestroySurface(scaled_surface);
     SDL_SetCursor(m_cursor);
@@ -97,7 +98,7 @@ void Game::init_render_system(){
     m_window = SDL_CreateWindow("Anime TD", m_width, m_height, SDL_WINDOW_OPENGL | SDL_WINDOW_RESIZABLE);
     m_render_system = std::make_unique<RenderSystem>(m_window);
 
-    load_cursor();
+    load_cursor("assets/cursor.png");
     
 }
 
@@ -122,25 +123,42 @@ void Game::init_game(){
                                                       "assets/ground1.bmp"});
     register_type(SpriteType::CASTLE,                {"assets/dirt_road.png"});
     
+    //Register Towers
     register_type(SpriteType::ICE_TOWER,             {"assets/ice/ice_tower.png"});
+    m_objects.register_entity_sprite(TowerType::ICE_TOWER_DATA, SpriteType::ICE_TOWER);
+
     register_type(SpriteType::FIRE_TOWER,            {"assets/fire/fire_tower1.png",
                                                       "assets/fire/fire_tower2.png",
                                                       "assets/fire/fire_tower3.png",
                                                       "assets/fire/fire_tower4.png",
                                                       "assets/fire/fire_tower5.png",
                                                       "assets/fire/fire_tower3.png"});
+    m_objects.register_entity_sprite(TowerType::FIRE_TOWER_DATA, SpriteType::FIRE_TOWER);
+
     // register_type(SpriteType::POISON_TOWER,          {"assets/poison_tower.png"});
     register_type(SpriteType::POISON_TOWER,          {"assets/poison/poison1_tower.png"});
-    register_type(SpriteType::CLOUD_TOWER,           {"assets/cloud/cloud_tower.png"});
+    m_objects.register_entity_sprite(TowerType::POISON_TOWER_DATA, SpriteType::POISON_TOWER);
 
+    register_type(SpriteType::CLOUD_TOWER,           {"assets/cloud/cloud_tower.png"});
+    m_objects.register_entity_sprite(TowerType::CLOUD_TOWER_DATA, SpriteType::CLOUD_TOWER);
+    //Register Enemies
     register_type(SpriteType::VIKING_SPRITE,         {"assets/enemies/viking.png"});
+    m_objects.register_entity_sprite(EnemyType::VIKING, SpriteType::VIKING_SPRITE);
+
     register_type(SpriteType::DRAGONIT_SPRITE,       {"assets/enemies/dragonit.png"});
+    m_objects.register_entity_sprite(EnemyType::DRAGONIT, SpriteType::DRAGONIT_SPRITE);
+
     register_type(SpriteType::BEE_SPRITE,            {"assets/enemies/bee.png"});
+    m_objects.register_entity_sprite(EnemyType::BEE, SpriteType::BEE_SPRITE);
+
     register_type(SpriteType::SERJANT_SPRITE,        {"assets/enemies/serjant_walk1.png",
                                                       "assets/enemies/serjant_walk2.png",
                                                       "assets/enemies/serjant_walk3.png",
                                                       "assets/enemies/serjant_walk4.png"});
+    m_objects.register_entity_sprite(EnemyType::SERJANT, SpriteType::SERJANT_SPRITE);
+
     register_type(SpriteType::TANK_SPRITE,           {"assets/enemies/tank.png"});
+    m_objects.register_entity_sprite(EnemyType::TANK, SpriteType::TANK_SPRITE);
     
     register_type(SpriteType::FIRE_PROJECTILE,       {"assets/fire/fireball.png"});
     register_type(SpriteType::FIRE_AOE,              {});
@@ -303,10 +321,18 @@ void Game::handle_input(){
                 if(m_towers_scancode.count(scancode) > 0){
                     m_selected_tower = &m_towers_scancode[scancode];
                     SDL_Log("Selected Tower %d", m_selected_tower->type);
+                    auto sprite_type = m_objects.get_sprity_for_entity_type(m_selected_tower->type);
+                    auto sprites = m_render_system->get_registered_type_textures_pathes(sprite_type);
+                    if(sprites.size() > 0)
+                        load_cursor(sprites[0]);
                 }
                 if(m_enemies_scancode.count(scancode) > 0){
                     m_selected_enemy = &m_enemies_scancode[scancode];
                     SDL_Log("Selected Enemy %d", m_selected_enemy->type);
+                    auto sprite_type = m_objects.get_sprity_for_entity_type(m_selected_enemy->type);
+                    auto sprites = m_render_system->get_registered_type_textures_pathes(sprite_type);
+                    if(sprites.size() > 0)
+                        load_cursor(sprites[0]);
                 }
                 if(scancode == SDL_SCANCODE_SPACE){
                     if(m_state == GameState::PauseMenu){
