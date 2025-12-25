@@ -99,7 +99,7 @@ enum EntityGlobalType{
     BACKGROUND_ENTITY,
     DECORATION_ENTITY,
     ENEMY_ENTITY,
-    FRIEND_ENTITY,
+    FRIENDLY_ENTITY,
     PROJECTILE_ENTITY,
     HUD_ENTITY,
 };
@@ -678,7 +678,7 @@ Entities() {
             m_sprites[id].value = m_firings[id].cooldown;
             m_descriptions[id] = TowerDescription(*tower_descr);
 
-            m_types[id] = EntityGlobalType::FRIEND_ENTITY;
+            m_types[id] = EntityGlobalType::FRIENDLY_ENTITY;
 
             level.set_tile_occupied(tile.row, tile.column, 1);
             return id;
@@ -994,13 +994,13 @@ Entities() {
         for(int id = 1, n = Entities::size(); id < n; id++){
             SDL_FRect rect = {m_sprites[id].posX,
                               m_sprites[id].posY,
-                              m_sprites[id].width,
-                              m_sprites[id].height};
+                              m_sprites[id].width  * m_sprites[id].scale,
+                              m_sprites[id].height * m_sprites[id].scale};
             auto point = pos.get_sdl_point();
             if(SDL_PointInRectFloat(&point, &rect) &&
                is_alive(id) &&
                 (m_types[id] == EntityGlobalType::ENEMY_ENTITY ||
-                 m_types[id] == EntityGlobalType::FRIEND_ENTITY))
+                 m_types[id] == EntityGlobalType::FRIENDLY_ENTITY))
                 return id;
         }
 
@@ -1050,6 +1050,7 @@ Entities() {
         }
         return SpriteType::UNDEFINED;
     }
+
     void register_entity_sprite(std::variant<std::monostate, TowerType, EnemyType> entity_type, SpriteType sprite_type){
         m_entity_to_sprite_type.emplace(entity_type, sprite_type);
     }
