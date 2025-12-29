@@ -55,29 +55,6 @@ void RenderSystem::render(const Entities& objects){
     }
 }
 
-void RenderSystem::init_custom_shaders(){
-        const char* vertex_shader = 
-        "#version 130\n"
-        "in vec2 position;"
-        "in vec2 texcoord;"
-        "out vec2 Texcoord;"
-        "void main() {"
-        "    gl_Position = vec4(position, 0.0, 1.0);"
-        "    Texcoord = texcoord;"
-        "}";
-        
-    const char* fragment_shader =
-        "#version 130\n"
-        "in vec2 Texcoord;"
-        "out vec4 outColor;"
-        "uniform sampler2D tex;"
-        "void main() {"
-        "    outColor = texture(tex, Texcoord);"
-        "}";
-    
-    // auto m_textureOnlyShader = SDL_CreateGPUShader(vertex_shader, fragment_shader, NULL);
-    // SDL_SetRenderShader(m_renderer, m_textureOnlyShader);
-}
 SDL_Texture* RenderSystem::load_texture(std::string filepath){
     auto pos = filepath.find(".bmp");
     SDL_Surface* surface = nullptr;

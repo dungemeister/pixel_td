@@ -64,7 +64,6 @@ public:
 
 private:
     SDL_Texture* load_texture(std::string);
-    void init_custom_shaders();
     SDL_Texture* load_bush_texture();
     SDL_Texture* get_texture(std::string);
     bool render_sprite(const SpriteComponent& sprite);
