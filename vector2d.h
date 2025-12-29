@@ -53,6 +53,7 @@ public:
 
         return *this;
     }
-	SDL_FPoint get_sdl_point() const { return {x, y}; }
+	SDL_FPoint get_sdl_fpoint() const { return {x, y}; }
+	SDL_Point get_sdl_point() const   { return {static_cast<int>(x), static_cast<int>(y)}; }
     float x, y;
 };

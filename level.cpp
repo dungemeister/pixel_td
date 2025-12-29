@@ -6,13 +6,13 @@ std::optional<SDL_FPoint> Level::get_tile_position(const SDL_FPoint& pos){
 
     int row = -1;
     int column = -1;
-    if(pos.x >= m_pos.x && pos.x <= m_pos.x + m_level_width){
+    if(pos.x >= 0 && pos.x <= m_level_width){
 
-        column = static_cast<int>((pos.x - m_pos.x) / m_tile_width);
+        column = static_cast<int>(pos.x / m_tile_width);
     }
-    if(pos.y >= m_pos.y && pos.y <= m_pos.y + m_level_height){
+    if(pos.y >= 0 && pos.y <= m_level_height){
 
-        row = static_cast<int>((pos.y - m_pos.y) / m_tile_height);
+        row = static_cast<int>(pos.y / m_tile_height);
     }
     if(row >= 0 && column >= 0)
     {
@@ -35,13 +35,13 @@ TileComponent Level::get_tile(int row, int column){
 std::optional<TileComponent> Level::get_tile(const SDL_FPoint& pos){
     int row = -1;
     int column = -1;
-    if(pos.x >= m_pos.x && pos.x <= m_pos.x + m_level_width){
+    if(pos.x >= 0 && pos.x <= m_level_width){
 
-        column = static_cast<int>((pos.x - m_pos.x) / m_tile_width);
+        column = static_cast<int>(pos.x / m_tile_width);
     }
-    if(pos.y >= m_pos.y && pos.y <= m_pos.y + m_level_height){
+    if(pos.y >= 0 && pos.y <= m_level_height){
 
-        row = static_cast<int>((pos.y - m_pos.y) / m_tile_height);
+        row = static_cast<int>(pos.y / m_tile_height);
     }
     if(row >= 0 && column >= 0)
     {
@@ -133,7 +133,7 @@ Vector2D Level::get_dir(Vector2D pos){
 }
 
 Vector2D Level::get_tile_center(Vector2D pos){
-    auto tile_opt = get_tile(pos.get_sdl_point());
+    auto tile_opt = get_tile(pos.get_sdl_fpoint());
     if(tile_opt.has_value())
     {
         return {tile_opt.value().pos.x + m_tile_width / 2, tile_opt.value().pos.y + m_tile_height / 2};
@@ -153,7 +153,7 @@ Vector2D Level::get_tile_position(int row, int column){
 }
 
 bool Level::is_occupied(const Vector2D& pos){
-    auto tile = get_tile(pos.get_sdl_point());
+    auto tile = get_tile(pos.get_sdl_fpoint());
     if(tile.has_value())
         return tile.value().occupied;
     SDL_Log("WARNING: pos (%f, %f) not in map", pos.x, pos.y);
@@ -161,7 +161,7 @@ bool Level::is_occupied(const Vector2D& pos){
 }
 
 bool Level::is_decor_occupied(const Vector2D& pos){
-    auto tile = get_tile(pos.get_sdl_point());
+    auto tile = get_tile(pos.get_sdl_fpoint());
     if(tile.has_value())
         return tile.value().decor_occupied;
     SDL_Log("WARNING: pos (%f, %f) not in map", pos.x, pos.y);
@@ -169,7 +169,7 @@ bool Level::is_decor_occupied(const Vector2D& pos){
 }
 
 RoadTileComponent Level::get_nearest_road_tile(const Vector2D& pos){
-    auto tile = get_tile(pos.get_sdl_point());
+    auto tile = get_tile(pos.get_sdl_fpoint());
     if(tile.has_value()){
         float length = MAXFLOAT;
         int tile_index = -1;
@@ -190,7 +190,7 @@ RoadTileComponent Level::get_nearest_road_tile(const Vector2D& pos){
 
 void Level::calc_tiles_directions(std::vector<TileComponent>& tiles){
     for(auto it = tiles.begin(); it != tiles.end(); ++it){
-        if(is_road_tile(it->center_pos.get_sdl_point())) continue;
+        if(is_road_tile(it->center_pos.get_sdl_fpoint())) continue;
 
         // SDL_Log("Tile %d %d", it->row, it->column);
         auto road_tile = get_nearest_road_tile(it->center_pos);

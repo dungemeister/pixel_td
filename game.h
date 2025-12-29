@@ -3,6 +3,7 @@
 #include <SDL3_image/SDL_image.h>
 #include <SDL3_ttf/SDL_ttf.h>
 #include <memory>
+#include <functional>
 
 #include "render_system.h"
 #include "level.h"
@@ -26,12 +27,19 @@
 
 class Game{
 public:
-enum GameState{
-    MainMenu,
-    Gameplay,
-    PauseMenu,
-    Settings,
-};
+    enum GameState{
+        MainMenu,
+        Gameplay,
+        PauseMenu,
+        Settings,
+    };
+
+    enum MouseHandling{
+        LEFT_HUD,
+        LEVEL,
+        RIGHT_HUD,
+    };
+
     Game();
     ~Game();
     void destroy_game();
@@ -45,6 +53,8 @@ private:
     SDL_Renderer*                         m_renderer;
     SDL_Cursor*                           m_cursor;
     SDL_FPoint                            m_cursor_pos;
+    SDL_Rect                              m_window_viewport;
+    SDL_Rect                              m_level_viewport;
     std::unique_ptr<RenderSystem>         m_render_system;
     AnimationSystem                       m_animation_system;
     MoveSystem                            m_move_system;
@@ -78,7 +88,8 @@ private:
     std::unordered_map<ComponentType, std::function<bool(float)>> m_components_callbacks;
 
     Camera2D camera;
-    
+    std::unordered_map<MouseHandling, std::function<void(Entities& objects, const SDL_MouseButtonEvent& mouse_event)>> m_viewport_mouse_handlers;
+
     GameState m_state;
     int m_running;
     int m_width;
@@ -97,6 +108,7 @@ private:
     void init_render_system();
     void init_game();
     void init_pause_menu();
+    void init_mouse_handling();
     void resize_callback();
     void handle_mouse_event(Entities& objects, const SDL_MouseButtonEvent& mouse_event);
     void load_level_tiles();

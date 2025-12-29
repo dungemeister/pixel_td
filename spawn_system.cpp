@@ -16,7 +16,7 @@ void SpawnSystem::update(Entities& objects, const Level& level, float deltatime)
             Vector2D random_pos = {spawn.x, RandomFloat(spawn.y - tile_size.y / 4, spawn.y + tile_size.y / 2)};
             objects.spawn_enemies_targeted(level,
                                            target,
-                                           random_pos.get_sdl_point(),
+                                           random_pos.get_sdl_fpoint(),
                                            static_cast<EnemyType>(static_cast<int>(EnemyType::VIKING) + rand()%static_cast<int>(EnemyType::ENEMY_TYPES_SIZE)));
 
         }

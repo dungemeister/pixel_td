@@ -69,14 +69,18 @@ public:
     ,m_rows(0)
     ,m_tile_width(0)
     ,m_tile_height(0)
-    ,m_pos()
     ,m_level_width(0)
     ,m_level_height(0)
     ,m_castle_index(0)
     ,m_spawner_index(0)
     {}
 
-    Level(std::string map_file, SDL_FPoint pos_coords, SDL_FPoint size)
+    Level(const std::string& map_file, SDL_Point size)
+    :Level(map_file, (SDL_FPoint){static_cast<float>(size.x), static_cast<float>(size.y)})
+
+    {}
+
+    Level(const std::string& map_file, SDL_FPoint size)
     :m_file(map_file)
     ,m_level_width(size.x)
     ,m_level_height(size.y)
@@ -85,7 +89,6 @@ public:
     ,m_castle_index(0)
     ,m_spawner_index(0)
     {
-        m_pos = pos_coords;
         std::fstream f(map_file);
         std::cout << "Map " << map_file << "\n";
         std::string token;
@@ -109,8 +112,8 @@ public:
             while (std::getline(ss, token, ' ')) {
                 if (!token.empty()) { // Avoid adding empty strings if there are multiple spaces
                     m_tokens.push_back(token);
-                    SDL_FRect tile_rect = {m_pos.x + column * m_tile_width,
-                                           m_pos.y + row * m_tile_height,
+                    SDL_FRect tile_rect = {column * m_tile_width,
+                                           row * m_tile_height,
                                            m_tile_width,
                                            m_tile_height};
                     m_tiles.emplace_back(row, column, tile_rect, token);
@@ -139,8 +142,8 @@ public:
                     
                     if(is_road_tile(row, column)) continue;
 
-                    SDL_FRect rect = {m_pos.x + cur_column * m_tile_width,
-                                      m_pos.y + cur_row * m_tile_height,
+                    SDL_FRect rect = {cur_column * m_tile_width,
+                                      cur_row * m_tile_height,
                                       m_tile_width,
                                       m_tile_height};
                     m_road_tiles.emplace_back(cur_row, cur_column, rect);
@@ -150,10 +153,10 @@ public:
                 }
             }
             if(atoi(m_tokens[cur_index].c_str()) == TileComponent::spawner_tile_int){
-                SDL_FRect rect = {m_pos.x + (cur_index % m_columns) * m_tile_width,
-                                      m_pos.y + (cur_index / m_columns) * m_tile_height,
-                                      m_tile_width,
-                                      m_tile_height};
+                SDL_FRect rect = {(cur_index % m_columns) * m_tile_width,
+                                  (cur_index / m_columns) * m_tile_height,
+                                  m_tile_width,
+                                  m_tile_height};
                 m_road_tiles.emplace_back(cur_index / m_columns, cur_index % m_columns, rect);
                 m_spawner_index = cur_index;
                 cur_index = -1;
@@ -172,7 +175,6 @@ public:
     TileComponent get_tile(int row, int column);
     std::optional<TileComponent> get_tile(const SDL_FPoint& position);
     const SDL_FPoint get_size() const { return {m_level_width, m_level_height};}
-    const SDL_FPoint& get_position() const { return m_pos;}
     const SDL_FPoint get_tile_size() const { return {m_tile_width, m_tile_height}; }
 
     bool set_tile_occupied(int row, int column, int state);
@@ -208,7 +210,6 @@ private:
     float                    m_tile_height;
     float                    m_level_width;
     float                    m_level_height;
-    SDL_FPoint               m_pos;
     size_t                   m_castle_index;
     size_t                   m_spawner_index;
 

@@ -44,10 +44,97 @@ void Game::init(){
     init_render_system();
     init_pause_menu();
     init_game();
+
+    init_mouse_handling();
 }
 
 void Game::init_pause_menu(){
 
+}
+
+void Game::init_mouse_handling(){
+    m_viewport_mouse_handlers.emplace(MouseHandling::LEVEL, [this](Entities& objects, const SDL_MouseButtonEvent& mouse_event){
+        Vector2D   mouse_vec = {mouse_event.x - m_level_viewport.x, mouse_event.y - m_level_viewport.y};
+
+        if(mouse_event.button == SDL_BUTTON_LEFT){
+
+            //Left button mouse click drops selected entity information from description layout
+            remove_descriptor_widgets();
+            
+            if(m_selected_tower == nullptr &&
+            m_cur_level.is_occupied(mouse_vec)){
+
+                auto id = objects.get_object_from_position(mouse_vec);
+                if(id == objects.get_empty_id()){
+                    SDL_Log("WARNING: Fail to get object ID from position");
+                    return;
+                }
+
+                if(std::holds_alternative<std::monostate>(objects.m_descriptions[id])){
+                    SDL_Log("WARNING: Fail to get tower description for object ID %ld", id);
+                    return;
+                }
+                if (auto tower = std::get_if<TowerDescription>(&objects.m_descriptions[id])){
+                    SDL_Log("Selected tower %ld, type %d", id, tower->type);
+                }
+                if (auto enemy = std::get_if<EnemyDescription>(&objects.m_descriptions[id])){
+                    SDL_Log("Selected enemy %ld, type %d", id, enemy->type);
+                }
+                
+                update_description_layout(objects.m_sprites[id], objects.m_descriptions[id]);
+            }
+            else if(auto gold = m_components_data[ComponentType::PLAYER_GOLD];
+                    gold > 0 &&
+                    m_selected_tower != nullptr &&
+                    !m_cur_level.is_occupied(mouse_vec)){
+                
+                    auto callback = m_components_callbacks.find(ComponentType::PLAYER_GOLD);
+                    if(callback != m_components_callbacks.end()){
+                        auto res = callback->second(-m_selected_tower->cost);
+                        if(res){
+                            objects.add_tower(m_cur_level, m_selected_tower->type, mouse_vec);
+                            SDL_Log("Added tower to tile (%.1f, %.1f)", mouse_vec.x, mouse_vec.y);
+                        }
+                        else{
+                            SDL_Log("Not enough gold. Current gold %.1f", m_components_data[ComponentType::PLAYER_GOLD]);
+                        }
+                    }
+                    else{
+                        SDL_Log("WARNING: cannot find player's gold callback");
+                    }
+                    m_selected_tower = nullptr;
+                }
+            else{
+                SDL_Log("WARNING: player's gold %.1f", m_components_data[ComponentType::PLAYER_GOLD]);
+                m_selected_tower = nullptr;
+            }
+        }
+        else if(mouse_event.button == SDL_BUTTON_RIGHT){
+            if(!m_selected_enemy) {
+                SDL_Log("WARNING: Enemy aint selected");
+                return;
+            }
+            if(m_cur_level.is_road_tile(mouse_vec.get_sdl_fpoint())){
+                auto id = objects.spawn_enemies_targeted(m_cur_level,
+                                                        m_cur_level.get_castle_pos(),
+                                                        mouse_vec.get_sdl_fpoint(),
+                                                        m_selected_enemy->type);
+
+            }
+        }
+        else if(mouse_event.button == SDL_BUTTON_MIDDLE){
+            m_selected_tower = nullptr;
+            m_selected_enemy = nullptr;
+            load_cursor("assets/cursor.png");
+        }
+    });
+
+    m_viewport_mouse_handlers.emplace(MouseHandling::LEFT_HUD, [this](Entities& objects, const SDL_MouseButtonEvent& mouse_event){
+        SDL_Log("UNIMPLEMENTED YET");
+    });
+    m_viewport_mouse_handlers.emplace(MouseHandling::RIGHT_HUD, [this](Entities& objects, const SDL_MouseButtonEvent& mouse_event){
+        SDL_Log("UNIMPLEMENTED YET");
+    });
 }
 
 void Game::load_cursor(const std::string& sprite){
@@ -99,17 +186,21 @@ void Game::init_render_system(){
     m_render_system = std::make_unique<RenderSystem>(m_window);
     SDL_SetRenderLogicalPresentation(SDL_GetRenderer(m_window), m_width, m_height, SDL_LOGICAL_PRESENTATION_STRETCH);
 
+    m_window_viewport = {.x=0, .y=0, .w=m_width, .h=m_height};
+
     load_cursor("assets/cursor.png");
     
 }
 
 void Game::init_game(){
-    SDL_FPoint level_size = {1024, 1024};
-    SDL_FPoint level_pos = {(m_width - level_size.x) / 2, (m_height - level_size.y) / 2};
+    SDL_Point level_size = {1024, 1024};
+    SDL_Point level_pos = {(m_width - level_size.x) / 2, (m_height - level_size.y) / 2};
+    m_level_viewport = {level_pos.x, level_pos.y, level_size.x, level_size.y};
+
     m_levels.reserve(32);
     //Load levels in backward order to pop back current actual level from vector
-    m_levels.emplace_back("assets/map/level2.map", level_pos, level_size);
-    m_levels.emplace_back("assets/map/level1.map", level_pos, level_size);
+    m_levels.emplace_back("assets/map/level2.map", level_size);
+    m_levels.emplace_back("assets/map/level1.map", level_size);
     m_cur_level = m_levels.back();
     m_levels.pop_back();
     auto [rows, columns] = m_cur_level.get_resolution();
@@ -227,76 +318,25 @@ void Game::loop(){
 
 void Game::handle_mouse_event(Entities& objects, const SDL_MouseButtonEvent& mouse_event){
     Vector2D   mouse_vec = {mouse_event.x, mouse_event.y};
-    if(mouse_event.button == SDL_BUTTON_LEFT){
-        //Left button mouse click drops selected entity information from description layout
-        remove_descriptor_widgets();
+    auto mouse_point = mouse_vec.get_sdl_point();
+    //Handling mouse click for the level viewport
+    if(SDL_PointInRect(&mouse_point, &m_level_viewport)){
+        auto it = m_viewport_mouse_handlers.find(MouseHandling::LEVEL);
+        SDL_assert(it != m_viewport_mouse_handlers.end());
+
+        auto handler = it->second;
+        handler(objects, mouse_event);
         
-        if(m_selected_tower == nullptr &&
-           m_cur_level.is_occupied(mouse_vec)){
-
-            auto id = objects.get_object_from_position(mouse_vec);
-            if(id == objects.get_empty_id()){
-                SDL_Log("WARNING: Fail to get object ID from position");
-                return;
-            }
-
-            if(std::holds_alternative<std::monostate>(objects.m_descriptions[id])){
-                SDL_Log("WARNING: Fail to get tower description for object ID %ld", id);
-                return;
-            }
-            if (auto tower = std::get_if<TowerDescription>(&objects.m_descriptions[id])){
-                SDL_Log("Selected tower %ld, type %d", id, tower->type);
-            }
-            if (auto enemy = std::get_if<EnemyDescription>(&objects.m_descriptions[id])){
-                SDL_Log("Selected enemy %ld, type %d", id, enemy->type);
-            }
-            
-            update_description_layout(objects.m_sprites[id], objects.m_descriptions[id]);
-        }
-        else if(auto gold = m_components_data[ComponentType::PLAYER_GOLD];
-                gold > 0 &&
-                m_selected_tower != nullptr &&
-                !m_cur_level.is_occupied(mouse_vec)){
-            
-                auto callback = m_components_callbacks.find(ComponentType::PLAYER_GOLD);
-                if(callback != m_components_callbacks.end()){
-                    auto res = callback->second(-m_selected_tower->cost);
-                    if(res){
-                        objects.add_tower(m_cur_level, m_selected_tower->type, mouse_vec);
-                        SDL_Log("Added tower to tile (%.1f, %.1f)", mouse_vec.x, mouse_vec.y);
-                    }
-                    else{
-                        SDL_Log("Not enough gold. Current gold %.1f", m_components_data[ComponentType::PLAYER_GOLD]);
-                    }
-                }
-                else{
-                    SDL_Log("WARNING: cannot find player's gold callback");
-                }
-                m_selected_tower = nullptr;
-            }
-        else{
-            SDL_Log("WARNING: player's gold %.1f", m_components_data[ComponentType::PLAYER_GOLD]);
-            m_selected_tower = nullptr;
-        }
     }
-    else if(mouse_event.button == SDL_BUTTON_RIGHT){
-        if(!m_selected_enemy) {
-            SDL_Log("WARNING: Enemy aint selected");
-            return;
-        }
-        if(m_cur_level.is_road_tile(mouse_vec.get_sdl_point())){
-            auto id = objects.spawn_enemies_targeted(m_cur_level,
-                                                     m_cur_level.get_castle_pos(),
-                                                     mouse_vec.get_sdl_point(),
-                                                     m_selected_enemy->type);
+    else if(SDL_PointInRect(&mouse_point, &m_window_viewport)){
+        auto it = m_viewport_mouse_handlers.find(MouseHandling::RIGHT_HUD);
+        SDL_assert(it != m_viewport_mouse_handlers.end());
 
-        }
+        auto handler = it->second;
+        handler(objects, mouse_event);
+        
     }
-    else if(mouse_event.button == SDL_BUTTON_MIDDLE){
-        m_selected_tower = nullptr;
-        m_selected_enemy = nullptr;
-        load_cursor("assets/cursor.png");
-    }
+
 }
 
 void Game::handle_input(){
@@ -368,6 +408,9 @@ void Game::handle_draw(){
     SdlWrapper::W_SDL_SetRenderDrawColor(r, {0x18, 0x18, 0x18, 0xFF});
     SDL_RenderClear(r);
 
+    if(!SDL_SetRenderViewport(m_render_system->m_renderer, &m_level_viewport)){
+        SDL_Log("WARNING: SDL_SetRenderViewport: %s", SDL_GetError());
+    }
     // m_render_system->render_batch();
     switch(m_state){
         case Game::Gameplay:
@@ -379,6 +422,7 @@ void Game::handle_draw(){
         break;
     }
     
+    SDL_SetRenderViewport(m_render_system->m_renderer, &m_window_viewport);
     m_player_stats_layout->draw();
     m_descriptions_layout->draw();
     // TextureTest::test_texture_rendering(r, "assets/rocket_tower.png");
@@ -419,7 +463,6 @@ void Game::load_level_tiles(){
     auto tokens = m_cur_level.get_tokens();
     auto size = m_cur_level.get_size();
     auto tile_size = m_cur_level.get_tile_size();
-    auto level_position = m_cur_level.get_position();
     auto rows = res.first;
     auto columns = res.second;
 
@@ -544,7 +587,7 @@ void Game::load_decor_sprite(const Vector2D& pos, SpriteType type){
         return;
     }
     //TODO refactor get functions and mb remove std::optional 
-    auto tile = m_cur_level.get_tile(pos.get_sdl_point()).value();
+    auto tile = m_cur_level.get_tile(pos.get_sdl_fpoint()).value();
     auto tile_pos = tile.pos;
     auto tile_size = m_cur_level.get_tile_size();
 
@@ -731,7 +774,6 @@ void Game::handle_update(){
 }
 
 void Game::load_hud_layout(){
-    auto level_pos = m_cur_level.get_position();
     auto level_size = m_cur_level.get_size();
     SDL_FRect rect = {0, 0, 0, 0};
     //Load Player Stats Layout
@@ -769,7 +811,7 @@ void Game::load_hud_layout(){
     m_player_stats_layout->AddLayoutVertical(std::move(gold_layout));
 
     //Load Entites Description Layout
-    SDL_FRect descr_rect = {level_pos.x + level_size.x, 0};
+    SDL_FRect descr_rect = {level_size.x, 0};
     m_descriptions_layout = std::make_unique<UILayout>(this, SDL_GetRenderer(m_window), descr_rect);
 
 }
@@ -837,7 +879,7 @@ void Game::update_description_layout(const SpriteComponent& sprite, const Entiti
         auto tower_circle = std::make_unique<UICircle>("C_radius");
         auto color = SdlWrapper::W_SDL_ConvertToFColor(Colors::Sunset::saffron);
         color.a = 0.5f;
-        tower_circle->set_params(sprite.center.get_sdl_point(), tower->radius, color);
+        tower_circle->set_params(sprite.center.get_sdl_fpoint(), tower->radius, color);
         m_descriptions_layout->PushBackWidget(std::move(tower_circle));
     }
     else if(auto enemy = std::get_if<EnemyDescription>(&descr)){

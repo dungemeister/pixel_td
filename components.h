@@ -14,14 +14,15 @@
 typedef size_t EntityID;
 
 enum SpriteFlag{
-    fUpperLeftSprite   = 1 << 0,
-    fCenterSprite      = 1 << 1,
-    fSpriteContour     = 1 << 2,
-    fSpriteStencil     = 1 << 3,
-    fSpriteBorder      = 1 << 4,
-    fSpriteHealthBar   = 1 << 5,
-    fSpriteTone        = 1 << 6,
-    fSpriteCooldownBar = 1 << 7,
+    fUpperLeftSprite         = 1 << 0,
+    fCenterSprite            = 1 << 1,
+    fSpriteContour           = 1 << 2,
+    fSpriteStencil           = 1 << 3,
+    fSpriteBorder            = 1 << 4,
+    fSpriteHealthBar         = 1 << 5,
+    fSpriteTone              = 1 << 6,
+    fSpriteCooldownBar       = 1 << 7,
+    fSpriteCollisionRadius   = 1 << 7,
 };
 
 enum SpriteLayer{
@@ -509,7 +510,7 @@ Entities() {
         m_sprites[id].colG = 0.6;
         m_sprites[id].colB = 0.6;
         m_sprites[id].angle = 0;
-        m_sprites[id].flag = fCenterSprite | fSpriteTone | fSpriteBorder;
+        m_sprites[id].flag = fCenterSprite | fSpriteTone | fSpriteBorder | fSpriteCollisionRadius;
         m_sprites[id].layer = SpriteLayer::ENTITY;
         m_sprites[id].anim_index = -1;
         m_systems[id] |= eSpriteSystem;
@@ -596,8 +597,8 @@ Entities() {
     }
     
     EntityID add_tower(Level& level, TowerType type, const Vector2D& pos){
-        auto tile_opt = level.get_tile(pos.get_sdl_point());
-        if(!level.is_road_tile(pos.get_sdl_point()) && tile_opt.has_value())
+        auto tile_opt = level.get_tile(pos.get_sdl_fpoint());
+        if(!level.is_road_tile(pos.get_sdl_fpoint()) && tile_opt.has_value())
         {
             auto tile = tile_opt.value();
             auto id = add_object("tower");
@@ -996,7 +997,7 @@ Entities() {
                               m_sprites[id].posY,
                               m_sprites[id].width  * m_sprites[id].scale,
                               m_sprites[id].height * m_sprites[id].scale};
-            auto point = pos.get_sdl_point();
+            auto point = pos.get_sdl_fpoint();
             if(SDL_PointInRectFloat(&point, &rect) &&
                is_alive(id) &&
                 (m_types[id] == EntityGlobalType::ENEMY_ENTITY ||
