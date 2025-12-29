@@ -5,9 +5,12 @@
 #include "figures.h"
 #include "level.h"
 #include "palette.h"
+#include "camera2D.h"
 
 void RenderSystem::render(const Entities& objects){
     clean_frame();
+
+    // SDL_FPoint p = world_to_screen(cam, SDL_FPoint{ enemy.x, enemy.y });
 
     for(int id = objects.get_empty_id() + 1, n = objects.size(); id < n; id++){
         load_to_layer(objects.m_sprites[id], objects.m_health[id]);
@@ -186,9 +189,9 @@ bool RenderSystem::render_sprite(const SpriteComponent& sprite){
                         {0xFF, 0x00, 0xFF, 0xFF});
     }
 
-    if(sprite.radius > 0.f){
+    if((sprite.radius > 0.f) && (sprite.flag & fSpriteCollisionRadius)){
         auto col = Colors::OceanSunset::midnight_green;
-        col.a = 0x80;
+        col.a = 0x40;
         res = Circle::render_circle_filled(m_renderer, sprite.center.x, sprite.center.y, sprite.radius, col);
     }
     return res;
@@ -477,8 +480,7 @@ bool RenderSystem::render_cooldown_bar(const SpriteComponent& sprite){
         
         SDL_FRect dest_rect= {sprite.posX, sprite.posY, sprite.width * sprite.scale, sprite.height * sprite.scale};
 
-        render_bar(dest_rect, sprite.angle, (1.f - *percentage), Colors::Sunset::saffron);
-        return true;
+        return render_bar(dest_rect, sprite.angle, (1.f - *percentage), Colors::Sunset::saffron);
     }
-    return false;
+    return true;
 }
