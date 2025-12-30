@@ -169,7 +169,8 @@ bool RenderSystem::render_sprite(const SpriteComponent& sprite){
     if((sprite.radius > 0.f) && (sprite.flag & fSpriteCollisionRadius)){
         auto col = Colors::OceanSunset::midnight_green;
         col.a = 0x40;
-        res = Circle::render_circle_filled(m_renderer, sprite.center.x, sprite.center.y, sprite.radius, col);
+        SDL_FPoint center = m_camera.world_to_screen(sprite.center.get_sdl_fpoint());
+        res = Circle::render_circle_filled(m_renderer, center.x, center.y, sprite.radius, col);
     }
     return res;
 }
@@ -315,16 +316,22 @@ std::vector<std::string> RenderSystem::get_registered_type_textures_pathes(Sprit
 
 bool RenderSystem::render_sprite_texture(const SpriteComponent& sprite, SDL_Texture* text){
     bool res = false;
-    SDL_FRect dest_rect = {sprite.posX,
-                           sprite.posY,
-                           sprite.width * sprite.scale,
-                           sprite.height * sprite.scale};
+    auto point = m_camera.world_to_screen(SDL_FPoint{sprite.posX, sprite.posY});
+
+    SDL_FRect dest_rect = {point.x,
+                           point.y,
+                           sprite.width * sprite.scale * m_camera.zoom,
+                           sprite.height * sprite.scale * m_camera.zoom};
+    
     if(sprite.flag == fCenterSprite){
 
+        auto center_point = m_camera.world_to_screen(SDL_FPoint{sprite.center.x, sprite.center.y});
+
         //Shift sprite to the center of position
-        dest_rect.x  = sprite.center.x;
-        dest_rect.y  = sprite.center.y;
+        dest_rect.x  = center_point.x;
+        dest_rect.y  = center_point.y;
     }
+    
     SDL_FPoint center = {dest_rect.w / 2, dest_rect.h / 2};
     float angle = sprite.angle;
     SDL_FlipMode mode = SDL_FLIP_NONE;
@@ -454,8 +461,11 @@ bool RenderSystem::render_health_bar(const SpriteComponent& sprite, const Health
 bool RenderSystem::render_cooldown_bar(const SpriteComponent& sprite){
     if(auto percentage = std::get_if<float>(&sprite.value)){
         if(*percentage >= 1.f) return true;
-        
-        SDL_FRect dest_rect= {sprite.posX, sprite.posY, sprite.width * sprite.scale, sprite.height * sprite.scale};
+        auto screen_pos = m_camera.world_to_screen({sprite.posX, sprite.posY});
+        SDL_FRect dest_rect= {screen_pos.x,
+                              screen_pos.y,
+                              sprite.width * sprite.scale * m_camera.zoom,
+                              sprite.height * sprite.scale * m_camera.zoom};
 
         return render_bar(dest_rect, sprite.angle, (1.f - *percentage), Colors::Sunset::saffron);
     }

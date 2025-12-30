@@ -46,11 +46,16 @@ struct Camera2D {
         const SDL_FPoint before = screen_to_world(*this, mInVP);
 
         zoom *= zoomMul;
-        zoom = std::clamp(zoom, 0.5f, 4.0f);
+        zoom = std::clamp(zoom, 1.0f, 4.0f);
+        if(zoom <= 1.0f){
+            cx = 0.f;
+            cy = 0.f;
+        }
+        else{
+            const SDL_FPoint after = screen_to_world(*this, mInVP);
 
-        const SDL_FPoint after = screen_to_world(*this, mInVP);
-
-        cx += (before.x - after.x);
-        cy += (before.y - after.y);
+            cx += (before.x - after.x);
+            cy += (before.y - after.y);
+        }
     }
 };

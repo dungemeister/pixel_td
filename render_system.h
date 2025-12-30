@@ -1,5 +1,4 @@
 #pragma once
-#include "components.h"
 #include <SDL3/SDL.h>
 
 #include <vector>
@@ -7,9 +6,13 @@
 #include <unordered_map>
 #include <string>
 
+#include "components.h"
+#include "camera2D.h"
+
 class RenderSystem{
 public:    
-    RenderSystem(SDL_Window* window)
+    RenderSystem(SDL_Window* window, Camera2D& cam)
+    :m_camera(cam)
     {
         m_background_sprites.reserve(10);
         m_decoration_sprites.reserve(10);
@@ -62,6 +65,7 @@ public:
     std::unordered_map<SDL_Texture*, std::vector<SDL_Vertex>> m_vertexBatches;
     std::unordered_map<SDL_Texture*, std::vector<int>>        m_indexBatches;
 
+    Camera2D& m_camera;
 private:
     SDL_Texture* load_texture(std::string);
     SDL_Texture* load_bush_texture();

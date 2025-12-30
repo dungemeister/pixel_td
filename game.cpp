@@ -32,6 +32,7 @@ Game::Game()
     ,m_info_font(nullptr)
     ,m_descriptions_layout(nullptr)
     ,m_map_layout(nullptr)
+    ,m_camera()
 {
     init();
 }
@@ -183,7 +184,7 @@ void Game::init_render_system(){
     }
 
     m_window = SDL_CreateWindow("Anime TD", m_width, m_height, SDL_WINDOW_RESIZABLE);
-    m_render_system = std::make_unique<RenderSystem>(m_window);
+    m_render_system = std::make_unique<RenderSystem>(m_window, m_camera);
     SDL_SetRenderLogicalPresentation(SDL_GetRenderer(m_window), m_width, m_height, SDL_LOGICAL_PRESENTATION_STRETCH);
 
     m_window_viewport = {.x=0, .y=0, .w=m_width, .h=m_height};
@@ -342,6 +343,7 @@ void Game::handle_mouse_event(Entities& objects, const SDL_MouseButtonEvent& mou
 void Game::handle_input(){
     SDL_Event event;
     while(SDL_PollEvent(&event)){
+        auto keys = SDL_GetKeyboardState(nullptr);
         switch(event.type){
             case SDL_EVENT_QUIT:
                 m_running = 0;
@@ -350,13 +352,26 @@ void Game::handle_input(){
                 resize_callback();
             break;
             case SDL_EVENT_MOUSE_MOTION:
-                m_cursor_pos.x = event.motion.x;
-                m_cursor_pos.y = event.motion.y;
+            {
+                auto mouse_button = SDL_GetMouseState(&m_cursor_pos.x, &m_cursor_pos.y);
+                if((mouse_button & SDL_BUTTON_LMASK) &&
+                   (keys[SDL_SCANCODE_LCTRL] || keys[SDL_SCANCODE_RCTRL])){
+                    
+                    m_camera.cx -= event.motion.xrel / m_camera.zoom;
+                    m_camera.cy -= event.motion.yrel / m_camera.zoom;
+                }
+                // m_cursor_pos.x = event.motion.x;
+                // m_cursor_pos.y = event.motion.y;
+            }
+                
             break;
             case SDL_EVENT_MOUSE_BUTTON_UP:
                 handle_mouse_event(m_objects, event.button);
             break;
+            
             case SDL_EVENT_KEY_DOWN:
+            {
+
                 auto scancode = event.key.scancode;
                 if(m_towers_scancode.count(scancode) > 0){
                     m_selected_tower = &m_towers_scancode[scancode];
@@ -382,6 +397,20 @@ void Game::handle_input(){
                         m_state = GameState::PauseMenu;
                     }
                 }
+            }
+                
+            break;
+            case SDL_EVENT_MOUSE_WHEEL:
+            {
+                if(keys[SDL_SCANCODE_LCTRL] == false && keys[SDL_SCANCODE_RCTRL] == false) break;
+                
+                float mul = (event.wheel.y > 0) ? 1.1f : 1.0f / 1.1f;
+
+                float mxF, myF;
+                SDL_GetMouseState(&mxF, &myF);
+                m_camera.zoom_at_mouse(m_level_viewport, int(mxF), int(myF), mul);
+
+            }
                 
             break;
         }

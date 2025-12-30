@@ -87,7 +87,7 @@ private:
     std::unordered_map<ComponentType, float> m_components_data;
     std::unordered_map<ComponentType, std::function<bool(float)>> m_components_callbacks;
 
-    Camera2D camera;
+    Camera2D m_camera;
     std::unordered_map<MouseHandling, std::function<void(Entities& objects, const SDL_MouseButtonEvent& mouse_event)>> m_viewport_mouse_handlers;
 
     GameState m_state;
